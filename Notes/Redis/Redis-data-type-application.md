@@ -37,7 +37,8 @@
         12. `EXPIRE <key> 60` set key to expire after 60 seconds, default is never
         13. `TTL <key>` check key TTL
         14.  `SET <key> <value> EX 60` or `SETEX <key> 60 <value>` set expiry when create key-value pair
-        15.  `SETNX <key> <value>` create if doesnt exist
+            - `SET <key> <value> PX 60` for miliseconds
+        15.  `SET NX <key> <value>` create if doesnt exist
 
     - application 
         1. caching:
@@ -45,10 +46,42 @@
             - use key to segregate, eg: `MSET user:1:name: xiaolin user:1:age 18 user:2:name haha user:2:age 99`
         2. counting:
             - eg: `INCR abc:readcount`
+        3. distributed lock
+            - use `SET NX` to set if key doesnt exist
+            - usualy will `PX` to set expiry
+            - when unlock:
+                1. compare value from called if equal to value of key in memory
+                2. call `DEL` to remove key
+        4. information sharing
+            - use same redis to store the session informatio of a distributed system
 
-2. Hash
+2. List
+    - array, element order by insert sequence
+    - can prepend or append
+    - max: 2^32 -1 ( 40 billion elements)
+    - command:
+        1. `LPUSH <key> <value1> <value2>`
+        2. `RPUSH <key> <value1> <value2>`
+        3. `LPOP <key>`
+        4. `RPOP <key>`
+        5. `LRANGE <key> <start index> <stop index>` eg: `LSTART mylist 0 -1`
+        6. `BLPOP <key1> <key2> timeout` pop from left from key1, if no, key 2, else block for timeout second, if timeout==0, block indefinitely
+        7. `BRPOP <key1> <key2> timeout`
+    - application
+        1. messaging queue
+            - key for messageing queue:
+                1. ordering
+                    - List is FIFO, can use `LPUSH` + `RPOP` for ordering
+                    - to avoid consumer keep using while loop to `RPOP` ( and waste CPU)
+                        - use BRPOP, block untill new element available
+                2. handle duplicated
+                    - use ID for each message, and consumer need to record consumed ID
+                    - need to add in ID when  insert into list
+                3. reliable
+                    - 
+            
 
-3. List
+3. Hash
 
 4. Set
 
