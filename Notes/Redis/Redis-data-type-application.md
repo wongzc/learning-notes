@@ -156,11 +156,102 @@
             - `ZREVRANGE user:xiaolin:ranking 0 2 WITHSCORES` check top 3 highest
             - `ZRANGEBYSCORE user:xiaolin:ranking 100 200 WITHSCORES` check elements within 100 & 200 score
 
-
 6. bitMap
+    - binary , only 0 & 1
+    - locate element using offset
+    - save memory
+    - underlying structure: string
+    - command:
+        1. `SETBIT <key> offset value`
+        2. `GETBIT <key> offset`
+        3. `BITCOUNT <key> start end` get number of 1 in range
+        4. `BITOP [operation] [result] [key1] [keyn...]`
+            - operation: AND OR XOR NOT
+            - for NOT: only 1 key , the other can have n key
+        5. `BITOPS [key] [value]`
+            - return location of first value (0 or 1) in bitmap
+    - application:
+        - mark attendance:
+            - `SETBIT uid:sign:100:202206 2 1` set attendance to 1 for 2022 06 03 for account 100
+        - check if user logged in:
+            - `SETBIT login_status 10086 1`
+            - save memory, 50 mil user only 6 mb!
 
 7. HyperLogLog
+    - based on probability, 0.81% of error
+    - to get the cardinality number, i.e., number of unique element
+        - use constant memory to calculate even data size very big
+        - 12 KB, to cal 2^64 element
+        - compare to java, need 2^64*8/1024 KB for same amount of nuber
+    - command:
+        1. `PFADD <key> <element1> <element2>`
+        2. `PFCOUNT <key1> <key2>` count cardinality
+        3. `PFMERGE <destination> <source1> <source2>` merge hyperloglog
+    - application
+        1. unique visitor on a multi million website
+            - but may have 0.81% of error
 
 8. Geo
+    - for location-Based service (LBS), to check nearby etc
+    - underlying: sorted set
+    - use geohash encoding to change longitude latitude to score
+    - command:
+        1. `GEOADD <key> <longitude> <latitude> <member>` add long, lat and member (name) into a key
+        2. `GEOPOS <key> <member>` return location of member, `nil` if doesnt exist
+        3. `GEODIST <key> <member1> <member2> [m|km|ft|mi]` get distance, optional unit
+        4. `GEORADIUS key longitude latitude radius m|km|ft|mi [WITHCOORD] [WITHDIST] [WITHHASH] [COUNT count] [ASC|DESC] [STORE key] [STOREDIST key]`
+            - return set based range & location
+    - application
+        - uber, grab
 
 9. Stream
+    - specifically for message queue ( create on redis ver 5.0)
+        - before Stream, list was used for message queue
+            - pub-sub method, cannot save message
+            - offline user cannot access history of message
+            - cannot repetaly consume on same message, 1 consum will delete message
+            - producer need to create the unique ID itself
+    - command:
+        1. `XADD <key> * <field1> <value1>`
+            - `*` to tell redis use auto-generated unique ID
+            - replace `*` if want to specify own ID
+            - after execute, id will be return (example: "1654254953808-0" ), id has 2 part
+                - 1654254953808 is server time in miliseconds
+                - -0 is the nth message in this ms
+        2. `XLEN`
+        3. `XREAD [COUNT <count>] [BLOCK <milliseconds>] STREAMS <key> <id>`
+            - count: limit number of entry return
+            - block: block by ms if no entries available, ignore for no waiting
+            - can read from multiple streams
+            - will get all message after the specified ID
+        4. `XDEL` delete based of message id
+        5. `DEL` delete the stream
+        6. `XRANGE` return message within range
+        7. `XREADGROUP GROUP <groupname> <consumername> [COUNT <count>] [BLOCK <milliseconds>] STREAMS <stream> [<stream> ...] <id> [<id> ...]`
+            - reading message from a stream in context of consumer groups
+            - id can be '>', means start from first uncomsumed message (unconsumed within the group)
+                - diff group still can read the same message
+        8. `XPENDING <key> <groupname> [<start> <end> <count> [<consumer>]]` to check for each consumer group, message that consumer read but havent ack
+            - can use - + as start end
+            - optional to  specify consumer
+        9. `XACK` to acknowledge message has been processed
+            - stream use a PENDING list to save each message consumed by consumer group, untill it `XACK`
+                - make it more reliable, and message can be restore even after system down
+        10. `XGROUP`
+            - `XGROUP CREATE <stream> <groupname> <id or $> [MKSTREAM]`
+                - id: start from id, 0-0: start from begining
+                - $: start from new entries, i.e., after group created
+                - MKSTREAM: cerate stream if doesnt exist
+            - `XGROUP SETID <stream> <groupname> <id or $>`
+                - change the ID whwre consumer group start reading
+            - `XGROUP DELCONSUMER <stream> <groupname> <consumername>`
+                - remove consumer
+            - `XGROUP DESTROY <stream> <groupname>`
+                - delete consumergroup
+    - redis compare to kafka/ rabbitMQ:
+        - message may be lost when it is in stream, when:
+            - AOF asynchronously writing to  disk
+            - Master-Slave Replication, when master & slave swap
+            - when stream length larger than max, older will be deleted ( to avoid OOM, out of memory)
+        - kafka, rabbit MQ will save data in disk, so no OOM
+        - tehy will use multiple node to ensure if 1 node down, the other node working and preserve data
