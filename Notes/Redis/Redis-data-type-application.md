@@ -78,14 +78,84 @@
                     - use ID for each message, and consumer need to record consumed ID
                     - need to add in ID when  insert into list
                 3. reliable
-                    - 
-            
+                    - `BRPOPLPUSH` read from 1 list and push to another list
+                        - `BRPOPLPUSH <source> <destination> timeout`
+                    - to keep the message that is reading, incase system down after read
+                        - read is 1 time, need to pop to read
+            - downside as message queue:
+                - cannot multiple consumer to same message, as message removed when a consumer pop it
 
 3. Hash
+    - key value pair
+    - command:
+        1. `HSET <key> <field> <value>` set the field value for a key
+        2. `HGET <key> <field>`
+        3. `HMSET <key> <field1> <value1> <field2> <value2>`
+        4. `HMGET <key> <field1> <field2>`
+        5. `HDEL <key> <field1> <field2>`
+        6. `HLEN <key>` number of field
+        7. `HGETALL <key>` retuen all field and value
+        8. `HINCBY <key> <field> n`
+    - application
+        1. caching
+            - use string + json to store
+            - but for constant chaging value, can take out and save as Hash
 
 4. Set
+    - command:
+        1. `SADD <key> <value1> <value2>`
+        2. `SREM <key <value1> <value2>` remove value
+        3. `SMEMBERS <key>` get values from key
+        4. `SCARD <key>` get number of element
+        5. `SISMEMBER <key> <value>` check if value in set
+        6. `SRANDMEMBER <key> <count>` get count of element from set
+        7. `SPOP <key> <count>` similar to SRANDMEMBER, but remove after get, also random!
+        8. `SINTER <key1> <key2> <key3>` get intersect
+        9. `SINTERSTORE <destination> <key1> <key2> <key3>` save intersect to destination
+        10. `SUNION <key1> <key2> <key3>`
+        11. `SUNIONSTORE <key1> <key2> <key3>`
+        12. `SDIFF <key1> <key2> <key3>` get diff
+        13. `SDIFFSTORE <key1> <key2> <key3>`
+    - application
+        1. union, intersect, diff calculation complexity is big, may block redis
+        2. like:
+            - ensure 1 user 1 like
+        3. common following
+            - use intersect
+        4. lucky draw
+            - SPOP (if cannot repeatly get award) or SRANDMEMBER
 
 5. Zset
+    - command:
+        1. `ZADD <key> <score1> <member1> <score2> <member2>`
+        2. `ZREM <key> <member1> <member2>`
+        3. `ZSCORE <key> <member>`
+        4. `ZCARD <key>` number of element
+        5. `ZINCRBY <key> <increment> <member>` add increment to score of member
+        6. `ZRANGE <key> <start> <stop> WITHSCORES` get range from lowest to highest, add `WITHSCORES` if need score
+            - use (start as exclude boundary
+            - default include
+        7. `ZREVRANGE <key> <start> <stop> WITHSCORES` get from highest to lowest
+        8. `ZRANGEBYSCORE <key> <min> <max> WITHSCORES <LIMIT offset count>`
+            - get element within min and max, optional withscores
+            - start, end can be -inf or +inf
+            - LIMIT 0 1 means skip 0, and only 1 count needed
+        9. `ZRANGEBYLEX <key> <min> <max> [LIMIT offset count]`
+            - same as above, but sort lexicographical order
+            - can use "-" or "+" for all
+                - `ZRANGEBYLEX phone - +`
+            - min is like (a  (ccc, means all element start with a to ccc
+        10. `ZREVRANGEBYLEX key max min [LIMIT offset count]` sort by reverse lexico
+        11. `ZUNIONSTORE <destination> <number of set to add in> <key1> <key2>` 
+            - `ZUNIONSTORE result 2 zset1 zset2`
+        12. `ZINTERSTORE <destination> <number of set to add in> <key1> <key2>`
+    - application
+        1. ranking board:
+            - `ZINCRBY` to increase score
+            - `ZSCORE` to check score
+            - `ZREVRANGE user:xiaolin:ranking 0 2 WITHSCORES` check top 3 highest
+            - `ZRANGEBYSCORE user:xiaolin:ranking 100 200 WITHSCORES` check elements within 100 & 200 score
+
 
 6. bitMap
 
