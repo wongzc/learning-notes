@@ -88,5 +88,8 @@
         - the lru in redis object serve different use for LRU/LFU
             - LRU, 24 bits to record recent used timestamp
             - LFU, 16 bits for last decrement time (timestamp), 8 bit for logistic counter (is frequency, decrese with time, start with 5)
+                - when redis visited key: it decay logc, then add up value to logc 
+                - `lfu-decay-time` to control logc decay speed, larger, decay slower
+                - `lfu-log-factor` to control logc increment, larger, slower
 
         
