@@ -2,68 +2,8 @@
 ### source: xiaolincoding
 https://xiaolincoding.com/redis/
 
-1. what is redis
-    - in memory database, fast
-    - caching, message queue, distributed lock
-    - support:
-        - String
-        - Hash
-        - List
-        - Set
-        - Zset ( ordered set)
-        - Bitmaps
-        - HyperLogLog
-        - GEO
-        - Stream
-2. redis vs memcache
-    - same
-        - both in memory, use for cache
-        - high performance
-        - cache invalidation
-    - different
-        - redis support more type of data (String、Hash、List、Set、ZSet)
-        - memcache only key-value
-        - redis can save data permanently into disk, memcache cannot
-        - redis support cluster
 
-3. redis as cache for mysql
-    - redis QPS ( query per second) is 10x of MySQL
-    - redis cache data that query frequently for next query
-
-4. main data type
-    - String
-        - cache session token, basic key value storage
-    - List
-        - add element to head and tail, to implement queue in FIFO
-    - Sets
-        - unordered collection of unique string
-        - union, intersection and difference
-    - Zset
-        - score associated with each member, allow order retrieval
-        - lader biards, ranking system, schedule task priority
-    - Hash
-        - key-value pair
-        - representing objects
-    - Bit map
-        - compact way to store bits
-        - manipulate individual bits
-        - track user activity
-    - HyperLogLogs
-        - A probabilistic data structure used for approximating the cardinality (unique count) of a set
-        - count unqiue visitor to website ( for large data set)
-    - Streams
-        - store multiple entries in time-ordered manner
-        - message brokering, real-time analytic
-    - Geospatial Indexes
-        - Store and query geographic data using longtitude & latitude
-
-5. redis key value pair
-    - key: string
-    - value: string, list, hash, set, zset
-    - hash table to achieve key value pair, can search in O(1)
-    - key in hash table are call hash bucket, hold pointer that point to key-value data
-
-6. redis underlying data structure
+1. redis underlying data structure
     - simple dynamic strings (SDS)
             - SDS can save as binary data as it use len to decide if a string ended
             - SDS get len complecity is O(1) ( C string is O(n) as it didnt keep len)
@@ -211,7 +151,7 @@ https://xiaolincoding.com/redis/
         - remove prevlen, the other similar to ziplist
 
 
-6. data type to underlying data structure
+2. data type to underlying data structure
     - String: SDS     
     - list:
         - quicklist
