@@ -1,5 +1,6 @@
 # Redis persistency study note
 ### source: xiaolincoding
+https://xiaolincoding.com/redis/
 
 1. Redis persist data to disk
 

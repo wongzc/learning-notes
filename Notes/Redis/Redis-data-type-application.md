@@ -1,5 +1,6 @@
 # Redis data type and application
 ### source: xiaolincoding
+https://xiaolincoding.com/redis/
 
 1. String
     - max 512m

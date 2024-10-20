@@ -1,5 +1,6 @@
 # Redis availability
 ### source: xiaolincoding
+https://xiaolincoding.com/redis/
 
 1. Availability
     - AOF & RDB to make sure most data persist when system restart

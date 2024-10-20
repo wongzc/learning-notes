@@ -1,5 +1,6 @@
 # Redis data structure study note
 ### source: xiaolincoding
+https://xiaolincoding.com/redis/
 
 1. what is redis
     - in memory database, fast

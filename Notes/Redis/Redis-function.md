@@ -1,3 +1,6 @@
+# Redis function study note
+### source: xiaolincoding
+https://xiaolincoding.com/redis/
 
 1. Expiration Deletion Policy
     - set by:

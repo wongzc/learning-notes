@@ -1,5 +1,6 @@
 # Redis caching
 ### source: xiaolincoding
+https://xiaolincoding.com/redis/
 
 0. database usually in disk, disk read write is slow, so use redis as cache between client and database
 
