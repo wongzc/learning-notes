@@ -117,6 +117,95 @@ https://xiaolincoding.com/mysql
                 - if it is named with `ibdata1`: share tablespace, multiple table cross database can store in same file. ( but maintain own .frm file)
                 - `tablename.ibd` means dedicated tablesapce. when `innodb_file_per_table` set to 1 ( default)
         - sturcture of .frm file, consists of:
-            1. 
+            1. segemnt
+            2. extent
+            3. page
+            4. row
 
+1. segment
+    - segment consist of extent, and multiple segemnt form table.
+    - segemnt have: 
+        1. data segment: store leaf extent of B+ tree
+        2. index segment: store non leaf extent of B+ tree
+        3. rollback segment: store rollback data
+            - for MVCC (Multi-Version Concurrency Control) 
+2. extent
+    - innoDB use B+ tree, each layer in B+ tree connected with doubly linked list.
+    - if use page as unit, the two adjacent page can be dar physically. when disk lookup, will have many random I/O, which is slow.
+        - random I/O: disk need to move read/write head randomly to "seek"
+    - to solve, use extent to group page, size ~1 MB, which is 64 page. then can sequential I/O.
+3. page
+    - data saved in row, but database read data in page, to improve efficiency
+    - default page size 16KB ( continuos space)
+    - smallest unit for innodb (for read to/ write from memory )
+    - many type of page
+        - data pages
+        - undo log pages
+        - overflow pages
+4. row
+    - row_format:
+        1. Redundant: 
+            - old format, no one use
+        2. Compact: 
+            - design to save more data in 1 page, default for 5.1
+            - complete record has 2 part:
+                ([length list][null list][record header][row id][trx id][roll ptr][actual data])
+                1. additional infomration
+                    - variable-length field length list
+                        - char is fixed length, varchar is variable length
+                        - need to save actual length of varchar, to read it
+                        - data length save inversely
+                            - row: ['a','abc','abcd'] will be save as 04,03,01
+                            - `NULL` wont be save in actual data and so do length list
+                        - so, left side is inversely saved data length, rght side is actual data, middle is the record header information.
+                        - record header information point to location between next record header information and actual data, so read to left, we can get record header information, read to right, can get actual data.
+                        - also the front data and length info more likely cache hit
+                        - if all int, wont have length list
+                    - NULL value list
+                        - inversely save, 0 means not null, 1 means null
+                        - then saved as hexadecimal
+                        - if column set as `NOT NULL`, wont have null list, save 1 byte atleast
+                            (1 byte for 8 record, 9 will be 2 byte)
+                    - record header information ( 5 byte)
+                        - delete_mask: mark if this row is deleted. (1 means deleted)
+                        - next_record: point to next record, btween record header information and actual data, to left get record headre, to right get actual data
+                        - record_type:
+                            - 0: nomral record
+                            - 1: non-leaf in B+ tree
+                            - 2: minimum record
+                            - 3: maximum record
+                2. actual data
+                    - row_id ( 6 byte )
+                        - if specify primary key when create table, will not have row_id
+                        - else innodb will add this in
+                    - trx_id ( 6 byte )
+                        - indicate which transaction generated this record
+                    - roll_ptr ( 7 byte )
+                        - pointer to last version
+        3. Dynamic: default now, similar to compact
+        4. Compressed: similar to compact
+
+
+
+5. max 65535 for each row in mysql
+    - exclude `TEXT`, `BLOBs`, Hidden column, record header information
+        - hidden column: row_id, trx_id, meta data purpose
+    - include storage overhead: length list, null list
+
+6. varchar(n), max of n?
+    - n is number of character, not byte
+    - 1 row include null list & length list
+    - null list, if <8 columns, 1 byte/row
+    - lengthlist, if varchar<=255, 1 byte, else 2 byte/row
+    - so... if 1 column, max n is 65535-2-1=65532
+        - if character set is ascii
+    -```CREATE TABLE test ( `name` VARCHAR(65532) NULL ) ENGINE = InnoDB DEFAULT CHARACTER SET = ascii ROW_FORMAT = COMPACT;```
+    - if utf-8, 1 char is 3 byte, so 65532/3=21844
+    - formula: sum of all varchar n + sum of [1 if n<=255 else 2 for n in varchar] + null list ( 2 if >8 column else 1)
+
+7. row overflow
+    - unit for mySQL interaction with memory is page, 16KB, 16384 byte
+    - TEXT, BLOB can save more than 65535, which cause overflow
+    - compact: if 1 page not enough, innodb save some data in actual table, and save extra data into overflow page, and actual data use 20 byte to point to address of the this extra data.
+    - compress & dynamic: only 20 byte address in actual table, all data in oveflow page
 
