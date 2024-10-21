@@ -80,7 +80,7 @@
     - force change ( overwrite others' change)
         - git push --force
             - example: git checkout oldertag, git reset --hard older tag, git push --force
-        - use when need to rewtie history ( like rebase, amend, squashing commit, reset)
+        - use when need to rewrite history ( like rebase, amend, squashing commit, reset)
             - git push --force-with-lease
                 -  when commit after rebased branch ( to make sure no one commit after last check) 
             - git push --force-if-includes

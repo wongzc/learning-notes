@@ -71,7 +71,7 @@ https://xiaolincoding.com/redis/
         - hash key conflict
             - happen when 2 different key, get the same value after hash function
             - redis solve it with linked hash list
-                - if 2 (or more) hash key assigned same ahsh bucket, the later will be connected to the previous by the pointer
+                - if 2 (or more) hash key assigned same hash bucket, the later will be connected to the previous by the pointer
                 - can be a problem if too long (O(n) speed) 
                     - use rehash to solve
         - rehash
@@ -86,15 +86,14 @@ https://xiaolincoding.com/redis/
                 - with incremental rehash, small number of element is copy over during deletion/ query/ update
                 - insertion will be directly insert into ht2
                 - so when check, it check both ht1 & ht2
-            - when rehahs happen:
-                - load factor
+            - when rehash happen:
                 - load factor = number of element in hash table/ number of slot in hash table
                 - when LF >1:
                     - rehash if no bgsave (RDB) or no bgrewriteaof (AOF rewrite)
                 - when LF >5:
                     - must rehash
         - good:
-            - O(1) speed for serach
+            - O(1) speed for search
         - bad:
             - if data size too big, may have hash key conflict
     - int set
@@ -118,14 +117,14 @@ https://xiaolincoding.com/redis/
             - hash table is only use for retriving elemebt score in constant time in zset
             - the other will use skip list
         - skip list design
-            - each skipliatnode keep:
+            - each skiplistnode keep:
                 - element
                 - score
                 - pointer to front ( point backward)
                 - skiplist level, which have:
                     - decide skip how many
             - skiplist node is under skiplist
-                - skipliost contain pointer to head, tail, length and level used
+                - skiplist contain pointer to head, tail, length and level used
             - keep each next level ratio at 2:1
                 - example: 4 level 0, 2 level 1, 1 level 2
                 - best performance
