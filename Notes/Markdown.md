@@ -33,7 +33,9 @@
     >[Link Text](https://www.example.com)
 
 7. Image
-    >![Alt Text](https://www.example.com/image.jpg)
+    >![Alt Text](https://www.example.com/image.jpg)  
+    or  
+    <img src="https://www.example.com/image.jpg" alt="Example Image" width="500">  
 
 8. Code
     >`inline code`

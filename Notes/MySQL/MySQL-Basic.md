@@ -69,7 +69,7 @@ https://xiaolincoding.com/mysql
             - to decide to use which index ( if there are multiple)
             - can use `explain` before statement to check using which index
                 - `null` means not using index
-            - covering index: query on index only
+            - covering index: query on primary index only ( or on secondary, but result need primary index only, which skip lookup)
             - secondary index: in B+ tree, leaf node  of secondary index store main index
         3. execute: executor
             - executor interact with storage engine
