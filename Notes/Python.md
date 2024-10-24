@@ -5,8 +5,13 @@ python important learning points
 1. class: use when need attribute+method, center of OOP
     - encapsulatiopn: data/attribute + method
     - inheritance, cleaner, lesser repeat code
-    - polymorphism: diffeernt class, but if have same method name, can polymorphism call. treat differetn class as same instance
+    - polymorphism: diffeernt class, but if have same method name, can polymorphism call. treat differetn class as same instance of same class
     - abstract: create a template ( use abc.ABC & abc.abstarctmethod) with essentiate method defined ( with pass only). it is also data abstraction
+        ```
+        class template(ABC): 
+            @abstractmethod
+            def method(self): pass
+        ```
     - can multi inherit, just class A(inher1, inher2)
 
 2. python is compiled to byttecode, and run by python-virtual-machine (PVM, interpreter), while c++ is compiled to machine code, run by CPU
@@ -18,16 +23,17 @@ python important learning points
     - muttable data: passed by reference, i.e., can be updated by function
     - immutable data: passed by value
         - for function to call var in outer fucntion (nested function): use nonlocal
-        - for fucntion to call var in outside(non-fucntion): use global
+        - for fucntion to call var in global (non-fucntion): use global
 
 5. list comprehension:
-    -[a for a in range(10)]
-    -[a if a==b else aa for a in range(10)]
+    - `[a for a in range(10)]`
+    - `[a if a==b else aa for a in range(10)]`
+    - `[<expression_if_true> if <condition> else <expression_if_false> for <item> in <iterable> if <condition>]`
 
 6. lambda:
-    - y=lambda x:x*k #k can be vairable form global, x is the argument
-    - y=lambda a,b=0:a*b #can set default value
-    - y=lambda a,b=None: a*(b if b is not None else 0) # use if else
+    - `y=lambda x:x*k `#k can be vairable form global, x is the argument
+    - `y=lambda a,b=0:a*b` #can set default value
+    - `y=lambda a,b=None: a*(b if b is not None else 0)` # use if else
 
 7. exception haddling:
     - try: xxx 
@@ -39,8 +45,12 @@ python important learning points
 9. use for when have start and stop condition, use while when only have stop
 
 10. pass func as argument: 
-    - def a(text): return text.upper()
-    - def b(func): return func('haha')
+    ```
+    def a(text): 
+        return text.upper()
+    def b(func): 
+        return func('haha')
+    ```
     - b is taking func as input, and use func to process the text 'haha'
 
 11. use of asterisk *
@@ -77,21 +87,23 @@ python important learning points
     - timing
     - add metadata, like func.var=''
     - Enforcing Functionality
-    def my_decorator(func):
-        def wrapper(*args, **kwargs):
-            print("Before function call")
-            result = func(*args, **kwargs)
-            print("After function call")
-            return result
-        return wrapper
+        ``` 
+        def my_decorator(func):
+            def wrapper(*args, **kwargs):
+                print("Before function call")
+                result = func(*args, **kwargs)
+                print("After function call")
+                return result
+            return wrapper
+        
 
-    @my_decorator
-    def say_hello(name):
-        print(f"Hello, {name}!")
-        return f'nice to meet you, {name}'
+        @my_decorator
+        def say_hello(name):
+            print(f"Hello, {name}!")
+            return f'nice to meet you, {name}'
 
-    print(say_hello("Alice"))
-
+        print(say_hello("Alice"))
+        ```
 13. backslash: \
     - use for line continuation
     - use for escape char like
@@ -146,7 +158,11 @@ python important learning points
 
 24. generator:
     - (x for x in y)
-    - def func(y): for i in range(y): yield i
+    - ```
+        def func(y): 
+            for i in range(y): 
+                yield i
+      ```
     - zip(x,y)
     - map lambda to list
         names = ['Alice', 'Bob', 'Charlie']
@@ -206,5 +222,9 @@ python important learning points
     better to use full path to avoid such problem
 
 37. to import a .py in parent dir. just use: sys.path.append(parent), then can import the filename
-    - can get parent=os.path.dirname(current)
-    - currentfile = os.path.realpath(__file__) (current=os.path.dirname(currentfile))
+    ```
+    currentfile = os.path.realpath(__file__)
+    current=os.path.dirname(currentfile)
+    parent=os.path.dirname(current)
+    sys.path.append(parent)
+    ```
