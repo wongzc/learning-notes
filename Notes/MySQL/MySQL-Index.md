@@ -200,4 +200,71 @@ https://xiaolincoding.com/mysql
             - `Using temporary`: a temporay table used to store intermdeiate result. usually when `GROUP BY` or `ORDER BY`, low efficeint, need avoid
             - `Using index`: covered index, nice!
 
-        
+8. MySQL 1 table max 20 million row?
+    - int: 0~2^32-1, bigint: 0~2^62-1
+    - each page have: file header, page header, infimum+supermum, user record, free space, page directory and file tailer
+    - when insert new data, free space reduced, when full, create new page
+    - number of row B+ tree can store:
+        > M = number child node for branch  
+        > Z = height of tree, usually 3  
+        > Y = number of row in leaf  
+        > 1 page =16K, 16K -1K (header, tailer, infi+sup)=15K  
+        > assume index is bigint=8 byte, + 4 byte from pointer: 12 byte, 15*1024/12=1280  
+        > M = 1280  
+        > assume 1k for data, so 1 page 15 row, y=15  
+        > 15*1280^(3-1) ~= 24.5 mil
+    - MySQL will try to load the tree to memory, but when data too much, cant save index, need to visit disk directly
+
+
+9. index fail
+    - storage engine:
+        1. MyISAM: support B+ tree,R tree, Full-text index, default B+tree
+            - B+ tree leaf have address of data
+        2. InnoDB
+            - B+ tree leaf have data
+    - when index fail:
+        1. left or left & rigt wild card `select * from s where name like "%xx"`
+            - fail beacuse B+ tree sort by index value
+            - left wild card means dont know where to start
+            - *** but can be still can use index!, if name is index, and we only select name
+        2. function on index `select * from t_user where length(name)=6;`
+            - index only keep orginal value
+            - but if created a function index like `alter table t_user add key idx_name_length ((length(name)));`
+                - then length(name) can use index!
+        3. use expression on index `explain select * from t_user where id + 1 = 10;`
+            - but if `id = 10-1` then ok, as we not manipulating index!
+            - fail as it will take all value of index and do caluation and check  1 by 1
+        4. type conversion `select * from t_user where phone = 1300000001;` ** phone is varchar
+            - but... ` explain select * from t_user where id = '1';` this will not fail, id is int
+            - why?
+                - when we `select "10" > 9`, mysql return 1, means it convert 10 to int
+                    - else should be 0, as "1" is smaller than "9"
+                    - means when compare int & string, mysql convert string
+                - so the first case, index will convert
+                - 2md case, the '1' will convert
+        5. Non-leftmost match in a composite index
+        6. "OR" in "WHERE" and 1 of them is not index
+                
+
+10. MySQL count
+    - best to worst:
+        1. count(*)=count(1): count how many row
+        2. count(index)
+        3. count(other column): count how many non-null
+    - count(primary_index)
+        1. loop through and if not-null, count+1
+        2. innodb will try to loop secodnary index
+            - why? cause secondary index leaf node only has primary_index, use less memory!!
+    - count(1)
+        - when iterate index, it wont read value from column
+    - count (*)
+        - MySQL will change it to count(0)
+        - can cehck by `explain` and `show warnings;`
+        - for count(1) & count(*), mySQL will use the secodnary wtih smallest key_len! ( optimze memory)
+    - MyISAM engine have meta data for row count, so count(*) faster than innoDB
+    - how to improve count(*)?
+        - approximate
+            - `show table status` or `explain`
+            - will show approximate row count
+        - keep count in extra table!
+            - when insert, count+1 to that table
