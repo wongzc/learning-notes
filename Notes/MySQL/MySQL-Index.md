@@ -113,3 +113,91 @@ https://xiaolincoding.com/mysql
                 - thus, both a & b will be compsite search!
             - for `SELECT * FROM t_user WHERE name like 'j%' and age = 22`
                 - use composite serach for both name & age
+                - if varchar format is utf8mb4, will be 4 byte
+                - in `key_len` ( when we use EXPLAIN ), if it is varchar, will have extra 2 byte
+                    - usually 255>=char is 1 byte, because execution planned in server layer, wont check with innoDB about real length, but just use 2 byte
+        - index condition pushdown 
+            - for `select * from table when a>1, b=3`
+            - `Extra` will show `Using index condition`
+            - will filter off record that doesnt meet directly within index tranversal, lesser lookup.
+        - index selectivity
+            - the order of composite index also important
+            - in composite index, front index use more
+                - so should use a more distinguish ( selectivity) column
+                - > selectivity of a column = distinct count/ total count
+                - selectivity too low, cant do more filter through that index!
+                - Optimizer in MySQL: if found that certain value >30%, will skip index, and use full search
+        - `select * from order where status = 1 order by create_time asc`
+            - if just execute with index=status, will have `Extra`=`Using filesort` as it need to sort create_time
+            - to avoid this, can composite index status+create_time. which is sorted after filtered.
+
+6. when do we index/ not index
+    - issues with index:
+        - physical storage
+        - create & maitain index need time
+        - delete/add/update row efficiency impacted. B+ tree will need to update everytime
+    - when to index/
+        - unique column, like id
+        - column that always used in `WHERE`
+        - column that always used with `ORDER BY`, `GROUP BY`
+    - when not to index
+        - column that not used for `WHERE`, `ORDER BY`, `GROUP BY`
+        - column that low selectivity (cant filter away much, and optimizer may skip it)
+        - data too less
+        - column that always update/add/delete
+
+7. Index optimization
+    1. prefix index
+        - reduce index size, allow more index value in 1 index page, which improve query speed
+        - but cant use for:
+            - order by
+            - cant use prefix index as covered index
+    2. covered index
+        - all column can be get by B+ tree leaf node.
+        - data that get with secondary index, no need to go through primary index and lookup to get
+        - example:
+            - query: item_id, item_name, item_price
+            - create composite index of these 3
+            - and only query for these 3, avoid lookup from primary table
+    3. self increment primary index
+        - innon DB default use primary index as the preimary key
+        - when new data come in, add to the back of B+ tree
+        - if not self increment, new data may need to insert in middle of B+ tree
+        - some data may need to shifted and create a new page, call page splitting
+            - causing memory fragmentation
+            - index less compact, lower efficiency
+        - primary index should be short as well, so in secondary index, leaf node smaller, and less space
+    
+    4. use `NOT NULL` for index
+        1. optimizer harded to optimize if contain `NULL`, example like: `count` will skip `NULL`
+        2. `NULL` use space ( by the extra `NULL` list in row data infor)
+    
+    5. prevent index fail
+        - index fail when: ( will show `type` as `ALL`)
+            1. using left/ full wild card: `like %xx` or `like %xx%` ( not for right wild card!!)
+            2. query with calculation, function, type conversion. `select * from a where b+1=10`
+            3. composite index that not following leftmost prefix rule
+            4. for `WHERE`, if condition of `OR` 1 is index, another is not
+    
+    6. for `EXPLAIN`
+        1. possible_keys
+            - possible used index
+        2. key
+            - actual used index
+        3. key_len
+            - used index length (in byte)
+        4. rows
+            - scanned rows
+        5. type
+            - `ALL`: full scan, bad.
+            - `INDEX`: full scan on index table, better than `ALL` only on this no need to sort, but still bad.
+            - `RANGE`: when involve `<` or `>` or `in` or `between`, start to be good with index
+            - `REF`: when using non-unique index/ or prefix, cant stop when get the first match, need to do a small range scan. better
+            - `EQ_REF`: when use primary or unqiue index. in multiple table join, best
+            - `CONST`: when use primary or unqiue index, best than best, ( no need to join!)
+        6. extra
+            - `Using filesort`: when used `GROUP BY` or `ORDER BY` and cant used index, no choice to use sort. low efficient, need to avoid
+            - `Using temporary`: a temporay table used to store intermdeiate result. usually when `GROUP BY` or `ORDER BY`, low efficeint, need avoid
+            - `Using index`: covered index, nice!
+
+        
