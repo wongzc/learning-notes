@@ -117,3 +117,97 @@ https://xiaolincoding.com/mysql
             - not intent lock!!
             - happen when want to insert, but blocked by gap or next-key lock
             - the lock will be in pending status untill previous lock released
+
+5. How MySQL lock
+    - which SQL statement use row-level lock?
+        - innoDB, (MyISAM dont have)
+        - normal select is snapshot, use MVCC
+        - lock select that use row lock:
+            - share lock: `select ... lock in share mode;`
+            - exclusive lock: `select ... for update;`
+        - update 
+            - `update table .... where id = 1;`
+            - X lock
+        - delete 
+            - `delete from table where id = 1;`
+            - X lock
+    - How MySQL lock?
+        - for index: next-key lock
+            - when can use gap-lock or record lock to prevent phantom record, next-key lock will become record/gap lock
+        - if using secondary index, it lock both primary & secondary index
+        1. unique index equal query `select * from user where id = 2 for update;`
+            - if record exist
+                - next-key lock become record lock
+                - X-locked
+                - use `select * from performance_schema.data_locks\G` to check which lock is used
+                    - under `LOCK_MODE` ( which under `LOCK_TYPE`: `RECORD`, `TABLE` is for table level)
+                        - `X`: next-key
+                        - `X, REC_NOT_GAP`: record lock
+                        - `X, GAP`: gap lock
+                - primary-index is unique, and with record-lock, others can delete it, so count cannot be change.
+                    - use record lock is able to solve phantom record
+            - if record doesnt exist
+                - gap lock between the last that meet criteria until the first that fail criteria
+                    - if record is 1,5,6,7
+                    - search 2 will lock (1,5), which is 2,3,4
+                - why dont use next-key lock?
+                    - it will lock 5, which we dont need
+        2. unique index range query
+            - use next-key lock for all index, and change to gap/record in below scenario
+                - for `>=X`:
+                    - if `X` exist:
+                        1. record lock X
+                        2. next-key lock `(X, largest record]`
+                        3. next-key lock `(largest record, supremum pseudo-record]`
+                    - if `X` doesnt exist:
+                        1. next-key lock `(X, largest record]`
+                        2. next-key lock `(largest record, supremum pseudo-record]`
+                - for `>X`: 
+                    1. next-key lock `(X, largest record]`
+                    2. next-key lock `(largest record, supremum pseudo-record]`
+                    - so no one can insert value after X
+                - for `<X`:
+                    - if `X` doesnt exist:
+                        1. next-key lock `(infimum, smallest record]`
+                        2. next-key lock `(smallest record, largest that <X]`
+                        3. gap lock `(largest that <X, smallest that>X)`
+                    - if `X` exist:
+                        1. next-key lock `(infimum, smallest record]`
+                        2. next-key lock `(smallest record, X]`
+                        3. gap lock `(X, smallest that>X)`
+                - for `<=X`:
+                    - if `X` doesnt exist:
+                        1. next-key lock `(infimum, smallest record]`
+                        2. next-key lock `(smallest record, largest that <X]`
+                        3. gap lock `(largest that <X, smallest that>X)`
+                    - if `X` exist:
+                        1. next-key lock `(infimum, smallest record]`
+                        2. next-key lock `(smallest record, X]`
+
+        3. non-unique index equal query
+            - when query secondary index, lock applied to secondary index, and under certain criteria, for primary index
+            - when value exist:
+                - may have more records that equal, keep scanning until exceed
+                1. next-key lock `(last value that smaller than X, X]`
+                    - avoid insert X infront
+                2. gap lock `(X, first value that larger than X)`
+                    - avoid insert X from the back
+                - record lock primary index
+            - when value doesnt exist:
+                - gap lock `(last that smaller than X, first that bigger than X)`
+                - but value that is `last that smaller than X` or `first that bigger than X` can insert failed also
+                    - `first that bigger than X`: when the insert primary id is smaller than primary id of `first that bigger than X`
+                    - `last that smaller than X`: when the insert primary id is bigger than primary id of `last that smaller than X`
+        4. non-unique index range query `select * from table where col >= X  for update;`
+            - always next-key lock
+            1. next-key lock `(last that smaller than X, X]`
+            2. next-key lock `(X, largest value]`
+            3. next-key lock `(largest value, supermum]`
+            4. record lock all primary key that >=X
+        5. no index query
+            - next key lock all ! as it is full table scan
+
+
+summary
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/mysql/%E8%A1%8C%E7%BA%A7%E9%94%81/%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E5%8A%A0%E9%94%81%E6%B5%81%E7%A8%8B.jpeg">
+<img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/mysql/%E8%A1%8C%E7%BA%A7%E9%94%81/%E9%9D%9E%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E5%8A%A0%E9%94%81%E6%B5%81%E7%A8%8B.jpeg">
