@@ -198,16 +198,76 @@ https://xiaolincoding.com/mysql
                 - but value that is `last that smaller than X` or `first that bigger than X` can insert failed also
                     - `first that bigger than X`: when the insert primary id is smaller than primary id of `first that bigger than X`
                     - `last that smaller than X`: when the insert primary id is bigger than primary id of `last that smaller than X`
+
         4. non-unique index range query `select * from table where col >= X  for update;`
             - always next-key lock
             1. next-key lock `(last that smaller than X, X]`
             2. next-key lock `(X, largest value]`
             3. next-key lock `(largest value, supermum]`
             4. record lock all primary key that >=X
+
         5. no index query
-            - next key lock all ! as it is full table scan
+            - next-key lock all ! as it is full table scan
+            - block all operation excepti `select ... from` until transaction done!
+            - to avoid accidentally do this:
+                - change config `sql_safe_updates` to `1`
+                - so `update` can only be used when have either:
+                    1. `where` with index
+                    2. `limit`
+                    3. `where` and `limit` ( can without index )
+                - `force index([index_name])` to overwrite optimizer decision and use index!
 
 
 summary
 <img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/mysql/%E8%A1%8C%E7%BA%A7%E9%94%81/%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E5%8A%A0%E9%94%81%E6%B5%81%E7%A8%8B.jpeg">
 <img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/mysql/%E8%A1%8C%E7%BA%A7%E9%94%81/%E9%9D%9E%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E5%8A%A0%E9%94%81%E6%B5%81%E7%A8%8B.jpeg">
+
+
+6. MySQL Deadlock
+    - how dead lock?
+        - innoDB have next-key lock, to solve phantom read that may happen under repeatble read
+        - normal `select` wont lock, it is snapshot, so MVCC.
+        - if `select ... in share mode` or `select ... for update`, will lock, until `commit`
+            - need to take note, gap lock & gap lock co-exist, i.e., 2 `select... for update` wont affect each other
+                - no difference of X or S lock!
+                - can be exact same range, or overlap range
+            - insert intention lock cannot co-exit with gap lock
+                - it generate when trying to insert
+                - if the range is gap-locked, it will be pending.
+        - so Deadlock happend when 2 transaction, usign gap lock to lock a overlapped range
+        - then both trying to insert but cant, due to blocking of each other.
+        - cannot compete means cannot release, means contine block!
+
+7. how `insert` lock row?
+    - `insert` does not generate lock, usually
+    - only use trx_id in clustered index as implicit lock
+    - implicit lock: 
+        - innoDB skip lock, if it determine no conflict may happen
+        - to increase efficiency
+    - Implicit lock only change it to explicit lock when:
+        1. there's gap lock between record
+            - create insert-intention lock as pending
+        2. insert value is conflict in unique column
+            - primary index
+                - if insert a conflict value with primary index, will show `ERROR 1062`
+                - and `record lock (S)` the existing record
+            - unique secondary index
+                - if insert conflict value, also show `ERROR 1062`
+                - `next-key lock (S)` the existing record
+
+8. how to avoid deadlock?
+    - 4 criterie for deadlock
+        - mutual exclusion
+        - hold & wait
+        - no preemption ( cant be focibly taken away)
+        - circular wait
+    - any of the 4 removed, willsolve deadlock
+    - 2 way to broke circular wait:
+        1. set lock timeout
+            - rollback a transaction if timeout
+            - config `innodb_lock_wait_timeout` can set, default 50s
+            - show `ERROR 1205` when timeout
+        2. use active deadlock check
+            - config `innodb_deadlock_detect` change to `on`
+            - show `ERROR 1213` when detect, and rollback 1 of the transaction that cause deadlock, let other continue
+    - or in simple way, prevent it happen by set column as unique, so that when insert no need select check, just insert and see if error!
