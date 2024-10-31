@@ -107,5 +107,130 @@ https://xiaolincoding.com/mysql
                 - will stop and update buffer pool data to disk
                 - important to set correct size for redo log!
 5. bin log
-6. 2 stage submit
-7. optimize disk I/O for MySQL
+    - record all db structure change or table data change, not record query
+    - generate by server layer everytime when update done
+    - write to bin log file when transaction completed
+    - why do we need redo log when we have bin log?
+        - MySQL at first use MyISAM, which not crash-safe
+        - binlog can only used for archiving
+        - innoDb then introduced and redo log added for crash-safe
+    - bin log vs redo log:
+        1. purpose:
+            - binlog created by MySQL server layer, all storage engine can use
+            - redo log created by innoDB
+        2. format:
+            - binlog have 3 types:
+                1. STATEMENT
+                    - record SQL statement that ran on master, then ran on slave.
+                    - problem with dynamic function like uuid, may cause difference btw master & slave
+                    - called logic log
+                2. ROW
+                    - record how's the change done on data
+                    - may cause bin log size super huge ( when STATEMENT maybe just 1 sentence)
+                3. MIXED
+                    - use ROW or STATEMENT depends on situation
+            - redo log
+                - physical diary of what change done on which table, which page
+        3. write in method:
+            - binlog is append, if full, create another file
+            - redo log is circular, fixed space
+        4. usage:
+            - binlog for backup, master-slave replication
+                - if DB deleted, can use binlog, but not redo log
+                - cos redo log is not full record
+            - redo log for system crash-safe
+    - master slave replication 
+        - asynchronously calling statement in binlog ( from master ) to slave
+        - 3 step:
+            1. write to binlog
+                - after client sent order, master write to binlog first
+                - then commit transaction & update local data
+            2. sync binlog
+                - slave create a I/O thread connect to master log dump thread to receive master binlog
+                - copy binlog to all slave, slave write binlog to relay log
+                - then reply master "copy success"
+            3. replay binlog
+                - replay binlog and update data
+        - more slave, master need more I/O thread for log dump
+            - usually master with 2-3 slave
+        - master slave replication model: 3 type
+            1. Synchronous:
+                - master transaction thread need to wait slave complete bin log sync
+                - low efficiency, slow
+            2. Asynchronous:
+                - master transaction thread dont wait for bin log to finish sync to slave before return to client
+                - if master crash, data loss
+            3. Semi-Synchronous:
+                - master transaction thread wait for some slave complete dupliacte bin log
+    - when bin log write to disk?
+        - during transaction, binlog write to binlog cache
+        - when transaction commited, write from binlog cache to binlog file
+            - in page cache, not in disk, need `fsync` to disk
+        - binlog can not be splitted. due to 1 thread 1 transaction & atomicity of transaction
+            - must be write to disk in 1 operation
+        - binlog cache: memory that every thread have for binlog caching
+            - size depends on config `binlog_cache_size`
+        - `sync_binlog` control when transaction commited
+            - 0: write to page cache, os to decide fsync. default
+                - faster, but risky
+            - 1: write and fsync
+            - N: write N time before 1 fsync
+
+6. full flow for update: `UPDATE t_user SET name = 'xiaolin' WHERE id = 1;`
+    1. optimizer optimize
+    2. executor use innoDB API to check if data in buffer pool or need to read from disk to buffer pool
+    3. executor get clustered index and compare before and after change
+    4. innoDB record undolog, write to undo page in buffer pool
+    5. innoDB start to update and mark as dirty page in memory, write to redo log
+    6. background thread to decide when to write to disk ( WAL)
+    7. record binlog and save to binlog cache
+    8. 2 stage submit
+7. 2 stage submit
+    - after transaction commited, both redo log & bin log need to save to disk.
+        - if redo log success and bin log fail: master updated, slave outdated
+        - if redo log fail and bin log success: master outdated, slave updated
+    - 2 stage submmit:
+        - to makesure atomicity of redo log & bin log
+        - using internal XA transaction
+        1. prepare stage
+            - write XID ( ID of XA transaction) to redo log
+            - set redo log transaction status as prepare
+            - save redo log to disk (if `innodb_flush_log_at_trx_commit` = 1)
+        2. commit stage
+            - write XID to binlog
+            - save binlog to disk (if `sync_binlog` = 1)
+            - server API to set redo log status as commit
+    - fail during 2 stage commit
+        - MySQL scan redlog sequentially, if any redo log in prepare stage, cehck if XID in binlog
+        - XID not in binlog: fail before binlog saved, rollback
+        - XID in binlog: fail after binlog saved, commit
+    - uncommited transaction redo log also saved in disk, but will rollback if system fail & restart
+        - binlog only save to disk when commited
+    - problem of 2 stage commit:
+        - high disk I/O
+            - binlog save in binlog cache
+            - redo log save in redo log buffer
+            - memory to disk control by config, if both 1, every commit means 2 I/O
+            - impact to efficiency
+        - high lock contention
+            - `prepare_commit_mutex`: transaction need to obtain this lock to move to `prepare` and release after `commit`
+                - problem when multithread, causing competition
+            - group commit
+                - combined multiple commited transaction into 1
+            - new stage:
+                1. prepare
+                    - in mySQL 5.7, transaction dont fsync redo log to disk seperately, do it in flush
+                2. flush
+                    - transaction sequentially write binlog to file ( not disk)
+                    - in MySQL 5.7, fsync redo log to disk
+                3. sync
+                    - fsync binlog file to disk 
+                    - frequency depends on `Binlog_group_commit_sync_delay` ( 1 fsync for multiple binlog changes)
+                    - if more than `Binlog_group_commit_sync_no_delay_count` will auto save
+                4. commit
+                    - innoDB commit sequentially
+8. optimize disk I/O for MySQL
+    - `binlog_group_commit_sync_delay`: to delay binglog write to disk ( wont fail if MySQL crash, fail if OS crash)
+    - `binlog_group_commit_sync_no_delay_count`: same as above
+    - `sync_binlog`: set to mroe than 1 ( usually 100-1000), only fsync after N write for binlog ( risk for losing N binlog if OS crash)
+    - `innodb_flush_log_at_trx_commit`: set to 2, only write to file in page cache, os to control save to disk ( risk for losing data if OS crash)
