@@ -10,20 +10,20 @@ https://xiaolincoding.com/network
 
     2. transport layer
         - TCP, UDP
-            - TCP: 
+            - TCP (Transmission Control Protocol): 
                 1. flow control
                 2. timeout retransmission
                 3. congestion control
             - UDP:
                 1. faster
         - network support for application layer
-        - data sent by application layer if bigger than MSS ( largest length og TCP segment), need to seperate into different segment
-            - if any segment lost/ corrputed, resend only the segment
+        - data sent by application layer if bigger than MSS ( largest length of TCP segment), need to seperate into different segment
+            - if any segment lost/ corrupted, resend only the segment
             - need to specify port on device to send, as many application on device is receving as well.
 
-    3. network layer
+    3. network layer/ internet layer
         - IPV4, IPV6
-        - the actual data transfer between device
+        - the actual data transfer between device, from 1 to 1
         - using IP ( internet protocol), translate message into IP data
             - if bigger than MTU (1500 byte) will split again
             - each split wtih TCP head, IP head, MAC head ( MAC not include in MTU)
@@ -57,3 +57,107 @@ https://xiaolincoding.com/network
         - network: packet
         - transport: segment
         - application: message
+
+    6. what happen after key in URL?
+        1. HTTP
+            - analyze URL to send info to web server
+            - http://www.server.com/dir1/file1.html
+                - http: protocol
+                - www.server.com: web server
+                - /dir1/file1.html: file name/path
+            - if no file name/path, will visit default file
+                - /index.html or /default.html
+            - create HTTP request, GET/ POST etc
+        2. DNS
+            - request DNS server to get IP address
+            - on the right is higher level
+            - www.server.com. (at the end has a .)
+                - root DNS server "."
+                - top level DNS server ".com"
+                - authoritative DNS server "server.com"
+            - step:
+                - request IP address from local DNS server (server address in client TCP/IP setting)
+                - if in cache, return, else check with root DNS (.)
+                - then root will redirect to top-level DNS (.com)
+                - then redirect to authoratuve DNS, and get IP
+                - browser then send http request to IP addres
+            - will check browser cache, then os cache, then host file, before request from local DNS
+        3. protocol stack
+            - protocol stack in charge of HTTP transport after receive IP
+            - different layer, move from up to down
+                - application: browser, socket
+                - os: where protocol stack is at
+                - network card driver: control network card device
+                - network card: actual transmission and reception of signal in network cable
+            - browser use socket library to assign task to protocol stack
+            - protocol stack has 2 part
+                - TCP & UDP: to receive & send data (between application)
+                - IP: to send & receive network packet, another 2 protocol in IP
+                    - ICMP: information about error during network packet transfer
+                    - ARP: use IP to query ethernet MAC address
+        4. TCP
+            - TCP add TCP header on data
+            - HTTP is based on TCP
+            - structure
+            <br>
+            <img src="https://networklessons.com/wp-content/uploads/2015/07/tcp-header.png" width="500">
+                - source port (16 bits)
+                    - identify the originating application on the sender's device.
+                - destination port (16 bits)
+                    - Ensures the data reaches the correct application on the receiving device
+                - sequence number (32 bits)
+                    - tracking, ordering packet
+                - acknowledge number (32 bits)
+                    - sent by receiver to ensure receive
+                - data offset (4 bits)
+                    - to locate where data begin
+                - reserved (5 bits)
+                - control flags (9 bits)
+                    - URG
+                    - ACK: reply
+                    - PSH
+                    - RST: to reconnect
+                    - SYN: to establish connect
+                    - FIN: to end connect
+                - window size (16 bits)
+                    - to control data flow, receiver & sender indicate its capacity
+                - checksum (16 bits)
+                - urgent pointer (16 bits)
+                - options ( variable )
+                - padding 
+            - congestion control
+                - congestion window ( cwnd)
+                - not in TCP header
+                - controlled by sender ( adjust dynamically based on network conditions)
+            - 3 handshake
+                - tcp connection before sending data
+                - step:
+                    1. both at `CLOSED` state, one of the server port in `LISTEN`
+                    2. client send `SYN`, become `SYN-SENT` state
+                    3. server receive, return `SYN` and `ACK`, become `SYN-RCVD`
+                    4. client send `ACK`, become `ESTABLISHED`
+                    4. server received `ACK` and become `ESTABLISHED`
+                - to ensure both can receive and can send
+            - to check TCP connection status:
+                - linux: `netstat -napt`
+                - <img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E9%94%AE%E5%85%A5%E7%BD%91%E5%9D%80%E8%BF%87%E7%A8%8B/10.jpg" width="800">
+            - TCP data segment
+                - if HTTP data longer than `MSS`, TCP need to cut data into segment
+                    - `MSS`: data only
+                    - `MTU`: data + IP header+ TCP header, max MTU, 1500 byte
+                    - each segment split out with its own TCP header
+            - TCP packet Generation
+                - 2 port in TCP:
+                    1. browser listener port (random port number)
+                    2. web server listener port, default 80(HTTP), 443 (HTTPS)
+                - after establish connection, the data part in TCP packet will be http header + data
+                - <img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E9%94%AE%E5%85%A5%E7%BD%91%E5%9D%80%E8%BF%87%E7%A8%8B/13.jpg" width="600">
+        5. IP
+            - when TCP module establish/terminate connection, send/receive data, IP module encapsulate data into network packet
+            - then send it out
+            - IP packet header
+            - <img src="https://networklessons.com/wp-content/uploads/2015/07/ip-packet-header-fields.png" width="500">
+            - source & destination address:
+                - source: client ip
+                - destination: web server ip, that get from DNS domain resolution
+            - protocol: if HTTP, it is throuhh TCP, protocol: 06 (hexadecimal)
