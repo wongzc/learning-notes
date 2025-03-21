@@ -95,6 +95,7 @@ https://xiaolincoding.com/network
                 - IP: to send & receive network packet, another 2 protocol in IP
                     - ICMP: information about error during network packet transfer
                     - ARP: use IP to query ethernet MAC address
+
         4. TCP
             - TCP add TCP header on data
             - HTTP is based on TCP
@@ -152,6 +153,7 @@ https://xiaolincoding.com/network
                     2. web server listener port, default 80(HTTP), 443 (HTTPS)
                 - after establish connection, the data part in TCP packet will be http header + data
                 - <img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E9%94%AE%E5%85%A5%E7%BD%91%E5%9D%80%E8%BF%87%E7%A8%8B/13.jpg" width="600">
+
         5. IP
             - when TCP module establish/terminate connection, send/receive data, IP module encapsulate data into network packet
             - then send it out
@@ -161,3 +163,66 @@ https://xiaolincoding.com/network
                 - source: client ip
                 - destination: web server ip, that get from DNS domain resolution
             - protocol: if HTTP, it is throuhh TCP, protocol: 06 (hexadecimal)
+            - if multiple network interface:
+                - determine which destination to use by genmask the target address
+                - then find the one that matched
+                - if no match, go to 0.0.0.0
+                - <img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E9%94%AE%E5%85%A5%E7%BD%91%E5%9D%80%E8%BF%87%E7%A8%8B/15.jpg" width="500">
+        - with IP, TCP, HTTP header
+            - <img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/%E9%94%AE%E5%85%A5%E7%BD%91%E5%9D%80%E8%BF%87%E7%A8%8B/17.jpg" width="500">
+
+        6. MAC
+            - need to add MAC header to internet packet
+            - MAC is for ethernet
+            - MAC header:
+                1. receiver MAC address
+                2. sender MAC address
+                3. protocol
+                    - 0800: IP protocol
+                    - 0806: ARP protocol
+            - how to get receiver MAC address?
+                - find MAC adress of router
+                - router foward packet to receiver, using ARP
+            - ARP cache
+                - system (desktop, router) will store MAC to avoid repeat checking
+                - desktop can store router/printer/smart tv... MAC
+
+        7. Network card
+            - newtwork card and driver convert the binary data of internet packet into electric signal
+            - network card driver copy the packet and put in internal buffer
+                - add header and start frame delimiter at begining
+                - append frame check sequence (FCS) at the end for error detection
+            - network card has its own MAC address, and will check if destinatin MAC is itself ( which correct), it will discard if not mean to send to itself
+
+        8. Switch
+            - switch module convert electric signal to digital signal
+            - use FCS to check if any error, if no, put into buffer
+            - switch port wont chek destination MAC, switch port dont have its own MAC, it will place all received into buffer
+            - check if MAC address is in MAC table
+                - MAC table:
+                    1. MAC address of device
+                    2. switch port
+                - if not found on siwtch table
+                    1. maybe never sent any packet from that address to switch
+                    2. maybe long time never used and deleted
+                - switch will send packet to all port ( except source port)
+                    - then only the correct received will respond, the other will ignore
+                - receiver MAC can be Broadcast address
+                    - this case packet will be send to all port except source
+                    - in MAC: `FF:FF:FF:FF:FF:FF`
+                    - in ip: `255.255.255.255`
+        
+        9. router
+            - internet packet passed from switch to router
+            - check table to decide where to send, similar to switch
+            - but:
+                1. router is IP based, 3 layer
+                    - MAC & IP on all port
+                2. switch is ethernet based, 2 layer
+                    - no MAC on port
+            - router port with IP & MAc, can receive from and send to ethernet
+            - electric signal go to  network port, router change electric signal to mathematical signal, use FCS to check if ok
+            - then check if MAC address is to itself, discard if not, place in buffer if yes
+            - after receive, remove the MAC header
+
+            
