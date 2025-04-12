@@ -22,8 +22,8 @@ python important learning points
 4. argument pass by object-reference
     - muttable data: passed by reference, i.e., can be updated by function
     - immutable data: passed by value
-        - for function to call var in outer fucntion (nested function): use nonlocal
-        - for fucntion to call var in global (non-fucntion): use global
+        - for function to call var in outer fucntion (nested function): nonlocal var in the inner function
+        - for fucntion to call var in global (non-fucntion): global var in the function
 
 5. list comprehension:
     - `[a for a in range(10)]`
@@ -111,9 +111,9 @@ python important learning points
         - \n -> newline
         - \' -> '
 
-14. foward slash:
+14. foward slash: /
     - divie and path
-    - note, path can eb;
+    - note, path can be;
         - path = "C:\\Users\\Name\\file.txt"
             or path = r"C:\Users\Name\file.txt"
         - path = "C:/Users/Name/file.txt"

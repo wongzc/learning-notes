@@ -56,7 +56,7 @@ https://xiaolincoding.com/redis/
         - subprocess " bgrewriteaof "
             - subprocess fork a page table from main process, which point to same memory address {page table: map virtual memory to physical address}
                 - save memory! but this memory become read only
-                - when main/sub try to write to this memory, os will block and run copy on write
+                - when main try to write to this memory, os will block and run copy on write ( main will use the new one)
                     - become 2 memory
         - not using thread, as multi thread share same memory, need to use lock to avoid conflict, reduce efficiency
         - 2 stage where may block main process
@@ -76,8 +76,8 @@ https://xiaolincoding.com/redis/
     - faster than AOF
 
     - 2 command to create RDB:
-        - save: run in main process, may block if writing time too long
-        - bgsave: run in subprocess, avoid blocking main process
+        - save: run in main process, may block if writing time too long, but dont need fork, impact redis perfrm
+        - bgsave: run in subprocess, avoid blocking main process, need fork, no redis pefrm impact 
         - default setting for save:  
             > save 900 1  
             > save 300 10  
@@ -98,6 +98,8 @@ https://xiaolincoding.com/redis/
 4. mix AOF and RDB
     - change this setting to yes  
         `aof-use-rdb-preamble yes`
+    - faster due to writing in RDB format, smaller size also, also RDB format load faster to redis
+    - binary, so harder debug by human! also may harder to manual recover from broken AOF
     - when AOF rewrite:
         - subprocesss created by fork will use RDB to write the share memory into AOF first
         - new command added during rewrite will be write to AOF rewrite buffer, where subprocess will pick up and write in using AOF way
@@ -109,8 +111,7 @@ https://xiaolincoding.com/redis/
         - if "everysec" , will run in async, not blocking
 
     - AOF log file will be fill up in short time, trigger AOF rewrite
-        - page table that copied during rewrite will be bigger size ( for both AOF rewrite and bgsave)
-            - take more time to fork, block main process
+        - more often fork, block main process
         - if copy on write execute, will take more time as well
 
     - client side time out: large key take more time to load

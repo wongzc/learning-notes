@@ -72,7 +72,7 @@ https://xiaolincoding.com/redis/
 
 7. is redis single thread?
     - redis is single thread, as 1 main process handle receive request -> execute request -> send to client
-    - but redis program is not single thread, it run BIO ( background I/O) when started
+    - but redis program is not single thread, it run BIO ( background I/O) (for network I/O) and addtional thread when persistence (RDB/AOF)
     - 3 BIO:
         1. `BIO_CLOSE_FILE` use clode(fd) to close file
         2. `BIO_AOF_FSYNC` sync AOF to disk
@@ -117,8 +117,8 @@ https://xiaolincoding.com/redis/
             - zset: `zremrangebyrank` to delete 100 at 1 time
         - async delete:
             - use `unlink` instead of delete
-            - unlink will exxecute delete in async manner
-    - config for lazy delete
+            - unlink will execute delete in async manner
+    - config for lazy delete ( only delete when try to access)
         - `lazyfree-lazy-eviction no `: use lazy delete when memory max
         - `lazyfree-lazy-expire no` : use LD when key expire
         - `lazyfree-lazy-server-del no`: use LD when command that involve `del`, like `rename` when key alr exist
@@ -134,7 +134,10 @@ https://xiaolincoding.com/redis/
     - redis creator think that error usually from wrong syntax, which in dev env, not in prod env. and redis want simplicity
 
 14. redis distributed lock:
-    - use `SET NX`
+    - makes sure that only one process or server can do something at a time
+    - use `SET NX` (NX: only set if deosnt exist)
+        - `SET lock_key "some_value" NX EX 10`
+        - usually wth EX to auto release preent deadlock
     - pros:
         - efficiency
         - convenient

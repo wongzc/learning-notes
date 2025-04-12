@@ -18,9 +18,9 @@ https://xiaolincoding.com/redis/
     - when query key, redis check if key in expires table, if no, return value, if yes, cehck if expire before return
     - 3 policies
         1. Scheduled deletion
-            - when cerate key, create a schedule event to delete key
+            - when create key, create a schedule event to delete key
             - pros:
-                - makesure ley deletion asap, good for memory
+                - makesure key deletion asap, good for memory
             - cons:
                 - too much expiry key may cause CPU pressure when deleting
         2. Lazy deletion
@@ -94,5 +94,10 @@ https://xiaolincoding.com/redis/
                 - when redis visited key: it decay logc, then add up value to logc 
                 - `lfu-decay-time` to control logc decay speed, larger, decay slower
                 - `lfu-log-factor` to control logc increment, larger, slower
-
+3. Transaction
+    - run by start with `MULTI` command... `EXEC`
+    - does not roll back when failed
+    - run in order and sequential, other cannot insert command between this run
+    - data can be modifed by other before and after start
+    - so may use `WATCH` to watch key before start
         

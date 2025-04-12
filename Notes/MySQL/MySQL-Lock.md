@@ -236,7 +236,7 @@ summary
                 - if the range is gap-locked, it will be pending.
         - so Deadlock happend when 2 transaction, usign gap lock to lock a overlapped range
         - then both trying to insert but cant, due to blocking of each other.
-        - cannot compete means cannot release, means contine block!
+        - cannot compete means cannot release, means continue block!
 
 7. how `insert` lock row?
     - `insert` does not generate lock, usually

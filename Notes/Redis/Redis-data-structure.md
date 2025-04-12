@@ -4,7 +4,7 @@ https://xiaolincoding.com/redis/
 
 
 1. redis underlying data structure
-    - simple dynamic strings (SDS)
+    1. simple dynamic strings (SDS)
             - SDS can save as binary data as it use len to decide if a string ended
             - SDS get len complecity is O(1) ( C string is O(n) as it didnt keep len)
             - SDS concate will not result in overflow, as it will check if space enough before execute
@@ -18,7 +18,7 @@ https://xiaolincoding.com/redis/
             - buf (actual data)
         - SDS struct byte alignment
             - using packed alignment, i.e., struct with char (1 byte) and int (4 byte), will be 5 byte ( instead of 8 byte)
-    - listNode ( not using anymore)
+    2. listNode ( not using anymore)
         - based on list node
             - prev, next, value ( double linked)
             - prev/next can point to null
@@ -37,7 +37,7 @@ https://xiaolincoding.com/redis/
                 - if data continuos, high chance cache hit
             - each node have pointer to front/back, overhead for memory
         - so redis use ziplist when data small
-    - zip list ( not using anymore)
+    3. zip list ( not using anymore)
         - continuos space in memory, good use of CPU cache
         - consist of:
             - zlbytes: number of byte used by ziplist
@@ -60,8 +60,8 @@ https://xiaolincoding.com/redis/
             - when update, memory will relocated, can cause chain refresh
                 - only use when data small
             - need to 1 by 1 check element ( except head/tail)
-    - hash table ( dictht )
-        - use key function to calculate key to find the location in table
+    4. hash table ( dictht )
+        - use hash function to calculate key to find the location in table
         - hash table is actually array
         - each element in hash table is pointing to a dictEntry ( hash element)
             - each dictEntry consist of:
@@ -96,7 +96,7 @@ https://xiaolincoding.com/redis/
             - O(1) speed for search
         - bad:
             - if data size too big, may have hash key conflict
-    - int set
+    5. int set
         - continuos memory
         - consist of:
             - encoding: decide content element data size
@@ -108,7 +108,7 @@ https://xiaolincoding.com/redis/
             - why inset upgrade:
                 - save space when the array only have smaller int, only upgrade when big int added
             - after int set upgarde, wont downgrade
-    - skip list
+    6. skip list
         - only zset use skiplist 
             - in zset struct, actually we have skip list and hash table
         - when insert/update new data, data will be insert into both skip list and hash table
@@ -140,12 +140,12 @@ https://xiaolincoding.com/redis/
         - good:
             - support average O(logN) search
         
-    - quick list
+    7. quick list
         - is actually listnode+zip list
         - each node is a zip list
         - when insert, if space enough, just add, else, create a new node
 
-    - listpack
+    8. listpack
         - to mitigate chain reaction from ziplist
         - remove prevlen, the other similar to ziplist
 
@@ -161,5 +161,5 @@ https://xiaolincoding.com/redis/
         - int set: used if all element in set are integer and number<512 ( default) 
         - hash table: if contain non-int or >maxintset, use this
     - zset:
-        - listpack
-        - skip list 
+        - listpack: length <128>, element also <64bit
+        - skip list+ hash table

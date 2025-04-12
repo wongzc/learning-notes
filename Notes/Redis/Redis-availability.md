@@ -130,9 +130,9 @@ https://xiaolincoding.com/redis/
         1. monitor
             - ping all node (master+slave) every second
             - if node didnt reply within time ( `down-after-milliseconds` ), will be marked as **subjective offline**
-                - master node maybe delsay response due to system load, so have subjective delay
+                - master node maybe delay response due to system load, so have subjective delay
                 - use sentinel cluster to check ( >=3 sentinel)
-            - one a node is subjective offline, sentinel send request to gather feedback from other sentinel by `is-master-down-by-addr`
+            - once a node is subjective offline, sentinel send request to gather feedback from other sentinel by `is-master-down-by-addr`
             - then based on `quorum`, if number of sentinel agree reach this number, node will be marked as down
         2. promote master
             1. choose leader from sentinel to execute master-slave switch
