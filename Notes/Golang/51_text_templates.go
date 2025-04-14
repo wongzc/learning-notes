@@ -8,15 +8,18 @@ import (
 
 func main() {
 
-    t1 := template.New("t1")
-    t1, err := t1.Parse("Value is {{.}}\n")
+    t1 := template.New("t1") // template is a text doc with placeholder
+    t1, err := t1.Parse("Value is {{.}}\n") // parse the template. {{.}} is placeholder
+						// for data that pass later when execute template
+	t1.Execute(os.Stdout, 5)
     if err != nil {
         panic(err)
     }
 
     t1 = template.Must(t1.Parse("Value: {{.}}\n"))
+	// parse with template.Must in case Parse returns error it will panic
 
-    t1.Execute(os.Stdout, "some text")
+    t1.Execute(os.Stdout, "some text") // the {{.}} will be replaced after execute
     t1.Execute(os.Stdout, 5)
     t1.Execute(os.Stdout, []string{
         "Go",
@@ -29,7 +32,7 @@ func main() {
         return template.Must(template.New(name).Parse(t))
     }
 
-    t2 := Create("t2", "Name: {{.Name}}\n")
+    t2 := Create("t2", "Name: {{.Name}}\n") // can use .field to access data in struct
 
     t2.Execute(os.Stdout, struct {
         Name string
