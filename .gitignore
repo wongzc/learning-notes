@@ -1,3 +1,5 @@
 t.py
 t.go
 test/
+.venv/
+the-verdict.txt

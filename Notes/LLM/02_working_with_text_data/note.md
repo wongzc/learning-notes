@@ -22,3 +22,10 @@
 2. tokenizing text
     - split input text into individual token
     - token can be word or special character
+    - when tokenizing, keep or remove white space depends on our need
+        - remove can save memory
+        - keep can make it sensitive to text structure maybe like for python
+
+3. converting tokens into token ID
+    - after tokenize, need to assign ID before convert to embedding vectors
+    - and we also need to decode it to human readable way
