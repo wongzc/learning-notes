@@ -3,3 +3,4 @@ t.go
 test/
 .venv/
 the-verdict.txt
+venv/
