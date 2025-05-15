@@ -4,3 +4,8 @@ test/
 .venv/
 the-verdict.txt
 venv/
+model.pth
+model_and_optimizer.pth
+gpt_download.py
+gpt2/
+__pycache__/

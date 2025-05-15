@@ -189,25 +189,25 @@ class GPTModel(nn.Module):
         logits = self.out_head(x)
         return logits
 
-import tiktoken
-tokenizer = tiktoken.get_encoding("gpt2")
-model = GPTModel(GPT_CONFIG_124M)
+# import tiktoken
+# tokenizer = tiktoken.get_encoding("gpt2")
+# model = GPTModel(GPT_CONFIG_124M)
 
-start_context = "Hello, I am"
-encoded = tokenizer.encode(start_context)
-print("encoded:", encoded)
-encoded_tensor = torch.tensor(encoded).unsqueeze(0)
-print("encoded_tensor.shape:", encoded_tensor.shape)
-model.eval()
-# in eval mode, so random components like dropout is disabled
-out = generate_text_simple(
- model=model,
- idx=encoded_tensor,
- max_new_tokens=6,
- context_size=GPT_CONFIG_124M["context_length"]
-)
-print("Output:", out)
-print("Output length:", len(out[0]))
-decoded_text = tokenizer.decode(out.squeeze(0).tolist())
-print(decoded_text)
-# generate random stuff as it is not trained yet!!
+# start_context = "Hello, I am"
+# encoded = tokenizer.encode(start_context)
+# print("encoded:", encoded)
+# encoded_tensor = torch.tensor(encoded).unsqueeze(0)
+# print("encoded_tensor.shape:", encoded_tensor.shape)
+# model.eval()
+# # in eval mode, so random components like dropout is disabled
+# out = generate_text_simple(
+#  model=model,
+#  idx=encoded_tensor,
+#  max_new_tokens=6,
+#  context_size=GPT_CONFIG_124M["context_length"]
+# )
+# print("Output:", out)
+# print("Output length:", len(out[0]))
+# decoded_text = tokenizer.decode(out.squeeze(0).tolist())
+# print(decoded_text)
+# # generate random stuff as it is not trained yet!!
