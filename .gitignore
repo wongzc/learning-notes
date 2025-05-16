@@ -9,3 +9,9 @@ model_and_optimizer.pth
 gpt_download.py
 gpt2/
 __pycache__/
+sms_spam_collection/
+sms_spam_collection.zip
+train.csv
+test.csv
+validation.csv
+*.pth
