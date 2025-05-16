@@ -11,3 +11,4 @@ import torch
 print(torch.cuda.is_available())  # True means GPU is usable
 print(torch.cuda.get_device_name())
 ```
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
