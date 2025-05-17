@@ -16,3 +16,4 @@ test.csv
 validation.csv
 *.pth
 instruction-data.json
+Notes/LLM/07_finetune_for_instruction/instruction-data-with-response.json
