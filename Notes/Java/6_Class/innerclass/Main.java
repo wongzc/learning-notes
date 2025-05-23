@@ -15,7 +15,7 @@ class OuterClass {
     int a = 5;
   }
 
-  // inner class ca
+  // inner class can access outer attribute
 }
 
 public class Main {
