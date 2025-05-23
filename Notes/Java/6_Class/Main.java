@@ -27,9 +27,6 @@ public class Main {// create a class name Main
 
     int z; //create a class attribute
 
-    public Main() { // constructor name must match class name, and have no return type like void
-        z = 3456; // set initial value for class attribute
-    }
 
     public static void main(String[] args) {
         Main myObj = new Main(); // create an object from the Main class
@@ -59,6 +56,37 @@ public class Main {// create a class name Main
 
         abc testabc = new abc(100);
         System.out.println(testabc.cde);
+
+        // passing parameter to class constructor
+        Another2 xxx = new Another2(100142);
+        System.err.println(xxx.z);
+
+
+        //access modifier
+        // class: only public or default
+        // attribute/ methods/ constructor/ inner class
+            // private: only access in same class
+            // default: access in different class ok if same package
+            // protected: access in different package ok if same it is subclass ( extend)
+            // public: other class also can access, anywhere no limit
+        // class->package->subclass->any
+
+        //Non-access modifier
+        // class: 
+            // final: cannot be inherit
+            // abstract: must be inherit
+        // attribute/ methods/ constructor
+            // final: cannot be overridden/ modified
+            // static: attribute and methods belong to class, not object
+            // abstract: only used in abstract class ( only methods, which do not have body. ( can have concrete method in abstract also))
+            // transient: skip attribute and methods when serializing object containing them ( like password, thread, cache etc)
+            // synchronized: method accessed by 1 thread at a time
+            // volatile: value of attribute not cached thread-locally, always read from main memory
+
+        // Java package
+            // can import with package.name.* to import whole package
+
+
     }
 }
 
