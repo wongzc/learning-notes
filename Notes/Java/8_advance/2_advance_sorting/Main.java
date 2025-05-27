@@ -38,6 +38,20 @@ class SortByYear implements Comparator {
 //   }
 // }
 
+// using Comparable + compareTo
+class Car implements Comparable {
+  public String brand;
+  public String model;
+  public int year;
+
+  public int compareTo(Object obj) {
+    Car other = (Car)obj;
+    if(year < other.year) return -1; // This object is smaller than the other one
+    if(year > other.year) return 1;  // This object is larger than the other one
+    return 0;
+  }
+}
+
 public class Main { 
   public static void main(String[] args) { 
 
