@@ -149,3 +149,206 @@
         }
     }
     ```
+
+11. abstract class vs interface
+    - abstract:  ( use as common base)
+        - can have concrete and abstract method
+            - leave it no body to be abstract
+        - single inherit only
+        - constructor allowed
+        - any field ok
+    - interface: (use as common properties)
+        - abstract method only
+            - method implicitly `abstract` and `public`
+        - multiple inheritance
+        - no constructor allowed
+        - field is implicit `public static final`
+
+12. autoboxing and unboxing
+    - autoboxing: convert primitive type to wrapper class
+    - unboxing: object to primitive
+    ```Java
+    int primitive = 5;
+    Integer wrapped = primitive;  // Autoboxing
+    int unboxed = wrapped;        // Unboxing
+    ```
+
+13. runnable vs callable interface in concurrency
+    - runnable:
+        - don't return result, don't throw exception, just run
+    - callable:
+        - return result, throw exception
+
+14. ArrayList vs LinkedList
+    - ArrayList
+        - fast random access ( direct access in O(n))
+        - slow insert/ delete
+    - LinkedList
+        - fast insert/ delete
+        - slow random access ( traverse node by node)
+
+15. singleton pattern and thread safe implementation in java
+    1. enum singleton
+    - handle thread-safe, serialize, reflection attack
+    ```java
+    public enum MySingleTon {
+        INSTANCE;
+        public void doSomething() {
+            ...
+        }
+    }
+    ```
+    ```java
+    MySingleTon.INSTANCE.doSomething(); //usage
+    // no need instantiate, directly use
+    ```
+
+    2. Eager initialization
+    - create instance when class loaded
+    - thread safe
+    - simple implementation
+    ```java
+    public class MySingleton {
+        private static final MySingleton instance = new MySingleTon();
+
+        private MySingleton() {
+            // constructor
+        }
+        public static MySingleton getInstance() {
+            return instance;
+        }
+    }
+    ```
+    ```java
+    MySingleton singleton = MySingleton.getInstance();
+    // never call new MySingleton()!
+    singleton.xxx();
+    ```
+
+    3. Lazy intialization
+    - instantiated only when needed ( save resource)
+    - volatile+ synchronized to ensure thread safe
+        - volatile: ensure visibility, other thread can immediate see when this is updated
+    ```java
+    public class MySingleton {
+        private static volatile MySingleton instance;
+
+        private MySingleton() {}
+
+        public static MySingleton getInstance() {
+            // double checked locking (DCL)
+            if ( instance == null) {
+                // only enter if instance null
+                // multiple can enter
+                synchronized (MySingleton.class) {
+                    // lock with synchronized
+                    // so only 1 thread can enter here
+                    if (instance == null) {
+                        // check again incase mutiple thread enter the outer instance==null
+                        instance = new MySingleton();
+                    }
+                }
+            }
+            return instance;
+        }
+    }
+    ```
+    ```java
+    MySingleton singleton = MySingleton.getInstance();
+    // never call new MySingleton()!
+    singleton.xxx();
+    ```
+
+    4. enum is simple and good, use non-enum when need lazy loading, dependencies injection, flexibility
+
+16. reflection
+    - feature to inspect and manipulate class, method, field, constructor at run time, even they are private.
+    - risk
+        - break encapsulation and force creation of multi instance of singleton by access private constructor.
+        ```Java
+        Constructor<MySingleton> ctor = MySingleton.class.getDeclaredConstructor(); // get the constructor using reflection API
+        ctor.setAccessible(true); // bypass private access
+        MySingleton another = ctor.newInstance(); // creates another instance!
+        ```
+
+
+17. Serialization
+    - converting java object to byte stream
+        - to save to disk or send over network
+    - risk:
+        - a new object create when serialize/ deserialize
+        - violate singleton pattern ( if it is singleton)
+    - use readResolve() to solve
+        - during deserialize, if readResolve() is present, java replace the object with return value of readResolve()
+        - problem only when deserialize, when object created form bytestream
+    ```java
+    protected Object readResolve() {
+        return getInstance();  // return the original instance
+    }
+    ```
+
+18. `volatile`
+    - ensure write by 1 thread are immediately visible to others
+    - prevent instruction reordering during object creation
+
+19. fail-fast vs fail-safe iterators
+    - fail-fast: throw `ConcurrentModificationException` if collection modified while iterating.
+        - ArrayList
+        - HashMap
+        - HashSet
+        - ensure data consistency
+    - fail-safe: work on clone of iterators
+        - ConcurrentHashMap
+        - CopyOnWriteArrayList
+        - allow collection modification when iterate
+
+20. Java Memory Model (JMM)
+    - rule for thread interact through memory
+    - tell JVM how to handle memory visibility & ordering of variable
+    - ensure
+        - visibility: when 1 thread update variable, another eventually see the update, through `volatile`
+        - Atomicity: operations like `volatile`, `synchronized` prevent partial update
+        - Ordering: define what order of operations is allowed to be observed by different threads
+    - JMM tools:
+        - `volatile`: ensure visibility
+        - `synchronized`: atomicity+ visibility+ordering
+        - `final`: help to create immutable objects
+        - `java.util.concurrent` tools: `AtomicInteger`, `ReentrantLock`
+
+21. hashCode() relation with equals()
+    - if `a.equals(b)` returns `true`
+        - then `a.hashCode() == b.hashCode()`
+    - but if `a.hashCode() == b.hashCode()` doesn't means a==b
+        - hash collisions can happen
+    - if override `.equals()`, need to override `.hashCode()` as well
+        - `.contains()`, `.get()`, `.remove()` all use `.hashCode()`
+        - override happen when want to have specific way of equal of object, like name equal etc, then need to set hashCode to just return name.hashCode()!
+
+22. all java object implicitly extend `java.lang.Object`
+    - it has method like `equals()`, `hashCode()`, `toString()`
+
+23. `@Override`
+    - override class method: optional but recommended
+    - override interface method: must
+
+24. method references
+    - shorthand for lambda
+    - 4 type:
+        1. static method
+        2. instance method of a object
+        3. instance method of arbitrary object of specific type
+        4. constructor
+    - example
+    ```java
+    List<String> names = List.of("a","b","c");
+
+    names.forEach(name -> System.out.println(name)); //lambda
+    names.forEach(System.out.println); // method reference
+    ```
+
+    static method
+    ```java
+    Function<Double, Double> absFunc = x -> Math.abs(x); //lambda
+    Function<Double, Double> absFunc = Math::abs; //method ref
+    absFunc.apply(-5.0);
+    ```
