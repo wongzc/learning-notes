@@ -158,8 +158,11 @@
         - constructor allowed
         - any field ok
     - interface: (use as common properties)
-        - abstract method only
-            - method implicitly `abstract` and `public`
+        - method implicitly `abstract` and `public`
+            - but can have:
+                - `default`: with body ( class can override)
+                - `static`: with body (call directly on interface)
+                - `private`: only internal use in interface!
         - multiple inheritance
         - no constructor allowed
         - field is implicit `public static final`
@@ -352,3 +355,129 @@
     Function<Double, Double> absFunc = Math::abs; //method ref
     absFunc.apply(-5.0);
     ```
+25. Observer pattern
+    - when object change state, all dependent objects will be notified
+    ```java
+    NewsAgency agency = new NewsAgency();
+    Observer reader1 = new NewsReader("Alice");
+    Observer reader2 = new NewsReader("Bob");
+
+    agency.registerObserver(reader1);
+    agency.registerObserver(reader2);
+
+    agency.setNews("New Java version released!");
+    ```
+    - implement using event bus
+
+26. comparable vs comparator 
+    - comparable:
+        - implement inside class to define default order
+        - need to override compareTo
+        ```java
+        class Person implements Comparable<Person> {
+            String name;
+            int age;
+
+            public Person(String name, int age) {
+                this.name = name;
+                this.age = age;
+            }
+
+            @Override
+            public int compareTo(Person other) {
+                return this.age - other.age; // sort by age
+            }
+        }
+
+        List<Person> people = List.of(new Person("Alice", 30), new Person("Bob", 25));
+        Collections.sort(people); // Uses compareTo()
+        ```
+    - comparator:
+        - define comparator outside of class
+        ```java
+        Comparator<Person> nameComparator = (p1, p2) -> p1.name.compareTo(p2.name);
+        Comparator<Person> ageComparator = (p1, p2) -> Integer.compare(p1.age, p2.age);
+
+        List<Person> people = new ArrayList<>();
+        people.add(new Person("Alice", 30));
+        people.add(new Person("Bob", 25));
+
+        Collections.sort(people, nameComparator); // Sort by name
+        ```
+27. try-with resource
+    - auto close resource when done using, even exception is thrown
+    - resource is any object that implement `java.lang.AutoCloseable` or `java.io.Closeable`
+        - `FileInputStream`, `BufferedReader`, `Scanner`, `Connection`
+    ```java
+    try (BufferedReader reader = new BufferedReader(new FileReader("data.txt"))) {
+        // instead of try{ reader=...}, it use try(reader=...) {}
+        System.out.println(reader.readLine());
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+    ```
+28. try-catch-finally
+    - any variable use in `finally` must be declared outside of `try` block
+
+29. HashMap vs LinkedHashMap vs TreeMap
+    - HashMap
+        - unordered
+        - fast lookup,O(1)
+        - `Map<String, Integer> map = new HashMap<>();`
+        - null key ok
+    - LinkedHashMap (use double linked list with hash table)
+        - ordered
+        - more memory usage, O(1), but need extra time to update linkedlist
+        - `Map<String, Integer> map = new LinkedHashMap<>();`
+        - null key ok
+    - TreeMap ( red black tree)
+        - sorted by key ( can pass comparator if need)
+        - `Map<String, Integer> map = new TreeMap<>();`
+        - not null key
+
+30. `transient`
+    - to indicate field that shouldn't be serialized
+
+31. method overloading and method overriding
+    - both are polymorphism
+
+32. checked vs unchecked exception in Java
+    - checked:
+        - compiler forces you to handle
+        - `try-catch` or `throws`
+        - extend `Exception`
+    - unchecked:
+        - exception not checked at compile time
+        - extend `RuntimeException`
+
+33. `java.util.concurrent`
+    - dedicated package for concurrent programming in Java
+    - thread-safe, high-performance
+    - `ExecutorService`: manage and execute task asynchronously
+        ```java
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+        executor.submit(() -> System.out.println("Task executed"));
+        ```
+    - `ConcurrentHashMap`: thread-safe hashMap
+        ```java
+        Map<String, Integer> map = new ConcurrentHashMap<>();
+        ```
+    - `CountDownLatch`: for synchronizing threads waiting for operation to be complete
+        ```java
+        CountDownLatch latch = new CountDownLatch(3);
+        latch.countDown(); // use this to subtract 1 from count
+        latch.await(); // this will block further action until latch=0
+        ```
+    - `AtomicInteger`: lock-free atomic operation on integer
+        ```java
+        AtomicInteger counter = new AtomicInteger(0);
+        counter.incrementAndGet();
+        ```
+34. synchronized collections vs concurrent collections
+    - synchronized collections
+        - example:
+            - `Collections.synchronizedList(new ArrayList<>())`
+            - `Collections.synchronizedMap(new HashMap<>())`
+        - normal collection wrap with synchronized wrapper
+        - use single lock to guard all operations
+        
