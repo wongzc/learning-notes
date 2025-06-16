@@ -480,4 +480,63 @@
             - `Collections.synchronizedMap(new HashMap<>())`
         - normal collection wrap with synchronized wrapper
         - use single lock to guard all operations
-        
+        - legacy
+        - 1 thread can access method at a time
+            - simple, but low performance under high concurrency
+    - concurrent collections
+        - for high-concurrency scenario
+        - fine grained locking
+        - some use lock-reads
+        - example:
+            - `ConcurrentHashMap`
+            - `CopyOnWriteArrayList`
+            - `ConcurrentLinkedQueue`
+            - `BlockingQueue`
+
+35. Fork/ Join framework
+    - Fork: split task into smaller subtask, concurrent execute
+    - Join: combine the result
+
+36. lock-free programming
+    - thread safe without using locks
+        - use low level atomic operations to avoid blocking threads
+    - benefit:
+        - no thread block
+        - no deadlock
+        - minimal context switching
+        - scalable
+    - use `java.util.concurrent.atomic`
+        - `AtomicInteger`, `AtomicLong`, `AtomicReference`
+    - some Scenarios may not be lock-free
+        1. complex multi step operations
+            - read, validate and write multiple variable
+        2. fairness/ ordering
+            - lock-free cause starvation if 1 thread keeps getting ahead
+            - lock-free use CAS ( compare and swap), fast thread may keep win again and again, slow thread may starve
+        3. wait-free guarantee
+            - wait-free means thread is not block by other thread or retry because of other
+                - lock: may block
+                - lock-free: may cause some thread fail and retry at CAS
+
+37. Compare and Swap (CAS)
+    - compare the expected ( thread read ) value with current value of a variable
+        - if expected = current, swap the current with new value
+        - else, retry
+
+38. ABA problems
+    - when value appears unchanged, but actually changed and changed back (A -> B -> A)
+    - happen in lock-free, as CAS only see values, not history
+    - to solve:
+        - stamping with version
+
+39. garbage collection process tuning
+    - for high throughput, low latency, memory intensive applications
+    - to solve
+        1. long GC pause: all thread stopped to reclaim memory
+        2. frequent GC
+        3. OutOfMemoryError
+        4. poor CPU util: thread stop during stop-the-world (STW ) GC, so CPU util low
+    - use JVM options to control GC
+        - choose GC algorithm
+        - heap size tuning
+        - check GC logs
