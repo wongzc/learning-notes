@@ -540,3 +540,33 @@
         - choose GC algorithm
         - heap size tuning
         - check GC logs
+
+40. Java Memory Model & Happens-Before Relationship
+    - define how threads interact through memory ( shared variables)
+    - Program order rule: 
+        - within single thread, statement appear to be in order, across thread may not
+    - Monitor Lock Rule:
+        - unlock happen before any subsequent lock on same monitor (lock)
+    - Volatile Variable Rule
+        - write to volatile variable happen before subsequent read
+    - Thread Start Rule
+        - call to `Thread.start()` happen before any action in started thread
+    - Thread Join Rule
+        - call to `Thread.join()` happen before thread termination is observed
+
+41. Java Agent
+    - special utilities to watch and change how a java program runs, without changing code
+
+42. Class Loading
+    - step:
+        - Loading: class loaders read the .class file and create Class object
+        - Linking: verification, preparation, resolution of ref
+        - Initialization: initialize static variable
+    - custom class loader:
+        - extend `ClassLoader` class and override findClass method
+        - use for:
+            - load class from non-standard location
+            - implement plugin system
+            - modify bytecode on-the-fly
+            - implement security policies
+            - how-swap class in running application
