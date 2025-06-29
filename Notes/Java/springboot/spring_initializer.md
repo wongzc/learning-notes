@@ -11,7 +11,7 @@
     - snapshot
 
 4. Project Metadata
-    - group: package namespace
+    - group: package namespace, more of convention to use reverse of domain like "com.wongzhaocai" etc, to create folder structure for code
     - artifact: name for JAR file, "backend-service.jar"
     - name: display name, human readable way "My Backend Service"
     - description

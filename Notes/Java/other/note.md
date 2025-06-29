@@ -570,3 +570,11 @@
             - modify bytecode on-the-fly
             - implement security policies
             - how-swap class in running application
+
+43. Generics
+
+44. Annotations
+
+45. Functional Programming
+
+46. modules
