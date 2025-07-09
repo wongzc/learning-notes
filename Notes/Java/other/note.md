@@ -578,3 +578,14 @@
 45. Functional Programming
 
 46. modules
+
+
+47. Map can be initialize with mutable or not mutable
+    - mutable
+    ```Java
+    Map<String, Integer> map = new HashMap<>(Map.of("Alice", 25, "Bob", 30));
+    ```
+    - immutable
+    ```Java
+    Map<String, Integer> immutableMap = Map.of("Alice", 25, "Bob", 30);
+    ```

@@ -33,3 +33,18 @@
         }
     }
     ```
+
+4. Dependency Injection to implement IoC
+    - controller
+        - need service object to be able to use it in controller, same for others
+    - service
+    - repository
+    - Inversion of Control (IoC): control of object creation and dependency management is inverted ( manage by external framework)
+    - Dependency Injection: Spring help to manage object lifecycle, user focus on logic
+    - type of injection:
+        - constructor injection: pass dependencies through class `@Autowired`  constructor
+        - setter injection: `@Autowired`  use a setter method to set
+        - field injection: `@Autowired` directly on a field, not recommended
+
+5. Apache Tomcat
+    - to run web application
