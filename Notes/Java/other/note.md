@@ -157,6 +157,15 @@
         - single inherit only
         - constructor allowed
         - any field ok
+    ```Java
+    abstract class Animal {
+        String name;                 // can modify and access
+        abstract void sound();        // abstract method (must be implemented)
+        void eat() {                  // concrete method (inherited as-is)
+            System.out.println(name + " is eating.");
+        }
+    }
+    ```
     - interface: (use as common properties)
         - method implicitly `abstract` and `public`
             - but can have:
@@ -166,6 +175,13 @@
         - multiple inheritance
         - no constructor allowed
         - field is implicit `public static final`
+        ```Java
+        interface Shape {
+            int VALUE = 10; // public static final, can access but not modify
+            double getArea(); // must implement all method, unless abstract class implement interface
+            double getPerimeter();
+        }
+        ```
 
 12. autoboxing and unboxing
     - autoboxing: convert primitive type to wrapper class
