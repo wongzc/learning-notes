@@ -16,12 +16,17 @@
         - constant, field, method data and code
     - Heap
         - allocate memory to object during run time
+        - store object ( class instance), instance field, arrays
+        - manage by GC
     - Stack
         - data and partial result which needed for method and performing dynamic linking
+        - store local variable, parameter, reference
     - Program Counter Register
         - store address of JVM instruction currently executing
     - Native Method Stack
         - all native method
+    - MetaSpace
+        - store class metadata
 
 5. classlodaer
     - part of JRE, when execute or create .class, classloader load java class and interface to JVM.
@@ -292,7 +297,7 @@
     - checked exception ( subclass of `Exception` )
         - check by compiler if we handle it
         - for recoverable situation
-        - if method throw IOException, SQLException, need to have throw outside
+        - if method throw `IOException`, `SQLException`, need to have throw outside
         ```Java
         void readFile() throws IOException {// need to throw here
             throw new IOException("File not found");
@@ -302,7 +307,7 @@
         - compiler wont check if we handle
         - unrecoverable 
         - dont need declare throw
-        - NullPointerException, ArithmeticException
+        - `NullPointerException`, `ArithmeticException`, `ArrayIndexOutOfBoundsException`
 
 37. virtual function
     - java method that not final, static, private are virtual
@@ -312,3 +317,241 @@
 38. serialization
     - need to `implements Serializable` to be able to serialize
     - if subclass dont want, need to override method `writeObject` by throwing `NotSerializableException`
+
+39. Collection Framework
+    - classes 
+        - ArrayList
+            - dynamic resize
+            - fast random access
+            - slow insert delete
+            - synchronize
+                - synchronizedList
+                ```Java
+                List<String> list = Collections.synchronizedList(new ArrayList<>());
+                synchronized (list) { // need synchronized for safe iteration
+                    for (String s : list) {
+                        System.out.println(s);
+                    }
+                }
+                ```
+                - CopyOnWriteArrayList
+                ```Java
+                CopyOnWriteArrayList<String> list = new CopyOnWriteArrayList<>();
+                for (String s : list) { // dont need manual synchronize
+                    System.out.println(s);
+                }
+                ```
+        - Vector
+            - thread-safe ver of ArrayList
+            - slower than ArrayList
+            - for backward compatibility of old Java Ver
+            - all method lock, slow, **recommend to just synchronize ArrayList**
+        - LinkedList
+            - doubly linked list
+            - fast insert delete
+            - slow random access
+        - PriorityQueue
+            - order by natural order (asc) or custom comparator
+            - no null
+            - not thread safe
+        - TreeSet
+            - sort in Asc by default
+            - no dups
+            - implement using red-black tree
+        - ArrayDeque
+            - for stack
+            - `Deque<Integer> stack = new ArrayDeque<>();`
+        - HashSet
+            - unique value only
+        - LinkedHashSet
+            - ordered version of HashSet
+    - Interface 
+        - Collection
+            - base interface, extended by List, Set, Queue
+            - add(), remove(), size(), contains(), iterator()
+        - Set (unordered, no dups)
+            - implemented by HashSet, LinkedHashSet, TreeSet
+            - same method as collection
+        - List (ordered, allow dups)
+            - implemented by ArrayList, Vector, LinkedList
+            - get(int index), set(int index, E element), indexOf()
+        - Queue (FIFO)
+            - implement by PriorityQueue, LinkedList
+            - offer() //insert , poll()//get head with remove , peek() // get head without remove
+        - Deque
+            - implement by ArrayDeque, LinkedList
+            - offerFirst(), offerLast(), pollFirst(), pollLast()
+        - Map
+            - implement by HashMap, TreeMap, LinkedHashMap
+            - put(), get(), containsKey(), keySet()
+
+40. Type casting
+    - Polymorphism downcasting
+        - when object type declare as parent
+        - can cast it to child to use child method 
+    - numeric type conversion
+        - int, double etc
+    - generics
+
+41. Generics:
+    - class, interface, method with type parameter to work with different type while ensure compile time safety
+    - why need?
+        - catch error at compile time ( not run time)
+        - no need manual casting
+        - code reuse for many types
+    - without generic
+        ```Java
+        List list = new ArrayList();
+        list.add("Hello");
+        String s = (String) list.get(0);  // ✅ Need manual casting
+        // we can list.add(123), which can cause ClassCastException at runtime
+        ```
+    - with generic
+        - class
+        ```Java
+        class Box<T> {        // T is a type parameter
+            private T value;
+            public void set(T value) { this.value = value; }
+            public T get() { return value; }
+        }
+
+        Box<Integer> intBox = new Box<>();
+        intBox.set(10);
+        Integer val = intBox.get();  // ✅ No casting
+        ```
+
+        - method
+        ```Java
+        public <T> void print(T data) {
+            System.out.println(data);
+        }
+
+        print("Hello");   // T = String
+        print(123);       // T = Integer
+        ```
+
+    - Convention
+        - T: type
+        - E: Element
+        ```Java
+        class MyList<E> {
+            private List<E> list = new ArrayList<>();
+            public void add(E element) { list.add(element); }
+            public E get(int index) { return list.get(index); }
+        }
+        ```
+        - K: key
+        - V: value
+        ```Java
+        class MyMap<K, V> {
+            private Map<K, V> map = new HashMap<>();
+            public void put(K key, V value) { map.put(key, value); }
+            public V get(K key) { return map.get(key); }
+        }
+        ```
+        - ?: wildcard, use when dont know and dont care
+
+42. why cannot create generic array
+    - array have runtime check, but generic Erasure remove type
+    - causing error
+    - but we can have generic arrayList
+    ```Java
+    List<String> list = new ArrayList<>(); //ok, cause dont check at runtime
+    List<String>[] arr = new List<String>[10]; //nok, when erasure it become List[] only
+    ```
+
+43. in memory storage
+    - arrays
+        - store in contiguous memory
+        - easier access by calculate address using base + offset
+    - ArrayLists
+        - store in contiguous
+        - when created, default 10-16 elements ( depends on java ver)
+        - resizing: when reached capacity, create larger array and move old to new
+
+44. convert between Array & ArrayList
+    - to ArrayList
+        - `Arrays.asList(the_array)` fast, but cannot change arrayList size!!
+        - `List<String> list = new ArrayList<>(Arrays.asList(the_array));`
+        - 
+        ```Java
+        List<String> list = new ArrayList<>();
+        Collections.addAll(list, arr);
+        ```
+    - to array
+        - `Object[] arr = list.toArray();`
+
+45. FailFast vs FailSafe
+    - HashMap: map modified while iterating, throw `ConcurrentModificationException`
+    - ConcurrentHashMap: map modified no impact to iteration. it iterate over a snapshot
+
+46. Thread
+    - extends Thread, with run method
+    ```java
+    class MyThread extends Thread {
+        public void run(){ 
+            ///do something
+        }
+    }
+    ```
+    - advantage of multithreading
+        - responsiveness
+        - resource sharing
+        - economy
+        - scalability
+        - better communication
+    - 2 way to create thread
+        - extends `Thread` class, override `run()` method
+        - implements `Runnable` interface, override `run()` method
+    - thread has its own program counter, execution stack, and local variables
+        - but share same memory space with other threads in same process
+    - lifecycle of thread ( use `.getState()`)
+        - New: created but not started
+        - Runnable: running
+        - blocked: temporarily suspended, waiting for a resource or event
+            - by `suspend()`
+            - use `resume()` to unlock
+        - waiting: wait for another thread to perform task, without timeout
+            - Sleep()
+            - Wait(): wait thread until other thread signal it to wake up
+                - need `notify()` or `notifyAll()`
+            - Join(): wait for thread to finish, auto resume
+            - waiting for I/O operation
+            - Synchronization issue
+        - timed_waiting: wait for specific time
+        - terminated: finish execution
+    - main thread
+        - parent thread of all other thread
+        - auto create when program start
+    - daemon thread
+        - for background operation that need to perform continuously
+            - garbage collector
+        - lower priority than user thread
+            - only execute when no user required background task
+    - how java achieve multi-threading
+        - through time-sharing/ time-slicing
+        - CPU switching between active threads
+        - os in charge of allocating CPU time to each thread
+    - thread priority
+        - MIN_PRIORITY
+        - MAX_PRIORITY
+        - NORM_PRIORITY
+
+47. Garbage collector
+    - to avoid memory leak
+    - cannot avoid GC in java
+    - free up unused memory in application periodically
+    - Heap memory
+        - object created with `new`
+        - if no longer reachable, GC will free up
+    - Stack memory
+        - local variable, cleared when method exit
+        - not manage by GC
+    - draw back
+        - may cause pause in application when clearing memory
+        - clearing process not deterministic, unpredictable
+        - may still temporarily increase memory usage if program create and discard many short-lived object
+    - type of garbage collector
+        - Minor
+        - Major
+        - Full
