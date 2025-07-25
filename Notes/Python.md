@@ -3,27 +3,79 @@
 python important learning points
 
 1. class: use when need attribute+method, center of OOP
-    - encapsulatiopn: data/attribute + method
-    - inheritance, cleaner, lesser repeat code
-    - polymorphism: diffeernt class, but if have same method name, can polymorphism call. treat differetn class as same instance of same class
-    - abstract: create a template ( use abc.ABC & abc.abstarctmethod) with essentiate method defined ( with pass only). it is also data abstraction
+    - `encapsulation`: data/attribute + method
+    - `inheritance`, cleaner, lesser repeat code
+        - MRO
+            - if multiple class which all have same final ancestor
+            - and all have super().xx() to use ancestor method
+            - then will resolve following MRO
+            ```python
+            class A:
+                def greet(self):
+                    print("A")
+
+            class E(A):
+                def greet(self):
+                    print("E")
+                    super().greet()
+
+            class B(E):
+                def greet(self):
+                    print("B")
+                    super().greet()
+
+            class C(A):
+                def greet(self):
+                    print("C")
+                    super().greet()
+
+            class D(B,C):
+                def greet(self):
+                    print("D")
+                    super().greet()
+
+            d = D()
+            d.greet()
+
+            print(D.mro())
+            # will be D B E C A, it wait if other same level will go to that ancestor
+            ```
+    - `polymorphism`: different class, but if have same method name, can polymorphism call. treat different class as same instance of same class
+        ```python
+        class Dog:
+            def speak(self):
+                return "Woof!"
+
+        class Cat:
+            def speak(self):
+                return "Meow!"
+
+        animals = [Dog(), Cat()]
+
+        for animal in animals:
+            print(animal.speak())  # Same method name, different behavior
         ```
+    - `abstract`: create a template
+        defined ( with pass only). it is also data abstraction
+        ```python
+        from abc import ABC, abstractmethod
+
         class template(ABC): 
             @abstractmethod
-            def method(self): pass
+            def method(self): 
+                pass
         ```
-    - can multi inherit, just class A(inher1, inher2)
+    - can multi inherit, just `class A(inher1, inher2)`
 
-2. python is compiled to byttecode, and run by python-virtual-machine (PVM, interpreter), while c++ is compiled to machine code, run by CPU
+2. python is compiled to bytecode, and run by python-virtual-machine (PVM, interpreter), while c++ is compiled to machine code, run by CPU
 
 3. mutable datatype can be changed after create, list/dict/set
     - immutable can only be reassigned, memory address changed
 
 4. argument pass by object-reference
-    - muttable data: passed by reference, i.e., can be updated by function
-    - immutable data: passed by value
-        - for function to call var in outer fucntion (nested function): nonlocal var in the inner function
-        - for fucntion to call var in global (non-fucntion): global var in the function
+    - mutable data: passed by reference, i.e., can be updated by function
+        - (list, dict, set, bytearray)
+    - immutable data: passed by value ( int, float, str, tuple, bool, frozenset)
 
 5. list comprehension:
     - `[a for a in range(10)]`
@@ -31,21 +83,23 @@ python important learning points
     - `[<expression_if_true> if <condition> else <expression_if_false> for <item> in <iterable> if <condition>]`
 
 6. lambda:
-    - `y=lambda x:x*k `#k can be vairable form global, x is the argument
+    - `y=lambda x:x*k `#k can be variable form global, x is the argument
     - `y=lambda a,b=0:a*b` #can set default value
     - `y=lambda a,b=None: a*(b if b is not None else 0)` # use if else
 
-7. exception haddling:
+7. exception handling:
     - try: xxx 
-    - excpet Exception as e: yyy ( or just except: yyy)
+    - except Exception as e: yyy ( or just except: yyy)
     - finally: zzz
 
 8. string can use .swapcase() to change AbCDe to aBcdE
 
-9. use for when have start and stop condition, use while when only have stop
+9. for vs while:
+    - use for when have start and stop condition
+    - use while when only have stop
 
 10. pass func as argument: 
-    ```
+    ```python
     def a(text): 
         return text.upper()
     def b(func): 
@@ -55,18 +109,27 @@ python important learning points
 
 11. use of asterisk *
     - unpack:
-        - a=[1,2,3], b=(4,5,6)
-            - def add(x,y,z): return x+y+z
-            - add(*a)
-            - add(*b)
-        -d={'x':3,'y':4,'z':8}
-            - add(**d)
+        ```python
+        def add(a, b, c):
+            print(a + b + c)
+
+        nums = [1, 2, 3]
+        add(*nums) 
+
+        d={'a':3,'b':4,'c':8}
+        add(**d) 
+        ```  
 
     - merge list
-        - c=[*a,*b]
+        - `c=[*a,*b]`
     - function argument:
-        - def func(*args, **kwargs): print(args,kwargs)
-            - will get list of args and dict of kwargs
+        - will get list of args and dict of kwargs
+        ```python
+        def func(*args, **kwargs): 
+            print(args,kwargs)
+        func(1,'a',kk=11,ll='asa')
+        #will be (1,'a') {'kk'=11,ll='asa'}
+        ```
     - variable length:
         - a,*b=[1,2,3,4,5,6,7,8]
             - a=1
@@ -75,19 +138,71 @@ python important learning points
 12. decorators:
     - make change to function input/output, add logging
         - existing decorator
-            - @staticmethod: for method that not going to access state of class, can skip self. i.e., def func(a) instead of def func(self,a)
-            - @classmethod: to access class variable, that is not like self.xxx. usually direct under a class.
-                - we create a method, @classmethod; def func(cls): return cls.xxx
-                - we can access this value in init by the classname.variablename
-            - @property: change method to attribute, so can call without ()
-            - @abstractmethod
-            - @lrucache
+            - `@staticmethod`: for method that not going to access state of class, can skip self. i.e.,` def func(a)` instead of `def func(self,a)`
+            - `@classmethod`: 
+                - to access class level variable
+                ```python
+                class Student:
+                    total_students = 0
+
+                    def __init__(self, name):
+                        self.name = name
+                        Student.total_students += 1
+
+                    @classmethod
+                    def get_total_students(cls):
+                        return cls.total_students
+
+                s1 = Student("Alice")
+                s2 = Student("Bob")
+
+                print(Student.get_total_students())  # 2
+
+                ```
+                - alternative constructor
+                ```python
+                class Person:
+                    def __init__(self, name, age):
+                        self.name = name
+                        self.age = age
+
+                    @classmethod
+                    def from_birth_year(cls, name, birth_year):
+                        return cls(name, 2025 - birth_year)
+
+                p1 = Person("Alice", 30)  
+                p2 = Person.from_birth_year("Bob", 1995)
+
+                print(p1.name, p1.age)  # Alice 30
+                print(p2.name, p2.age)  # Bob 30
+                ```
+            - `@property`: change method to attribute, so can call without ()
+            - `@abstractmethod`
+            - `@lrucache`
+                - store input output mapping, return output is input is cached
+                - fix sized cache, evicted based on LRU
     - can access control as well (** jwt wrapper?)
     - use for caching: create a cache={}, if arg in cache, return cache[arg], else store cache[arg]=result before return back
     - timing
-    - add metadata, like func.var=''
+    - add metadata
+        ```python
+        def add_metadata(author=None, version=None):
+            def decorator(func):
+                func.author = author
+                func.version = version
+                return func
+            return decorator
+
+        @add_metadata(author="Zhao Cai", version="1.0")
+        def my_function():
+            return "Hello"
+
+        print(my_function())            # Hello
+        print(my_function.author)       # Zhao Cai
+        print(my_function.version)      # 1.0
+        ```
     - Enforcing Functionality
-        ``` 
+        ``` python
         def my_decorator(func):
             def wrapper(*args, **kwargs):
                 print("Before function call")
@@ -104,6 +219,15 @@ python important learning points
 
         print(say_hello("Alice"))
         ```
+    - decorator style:
+        ``` python
+        outer(x,y,z): # to pass param into decorator, like metadata, repeat func etc
+            decorator(func): # take in func as param
+                wrapper(*args, **kwargs): # if set metadata, can skip this and just func.xx=yy, then return func
+                    # no return, do wrapper thing
+                return wrapper
+            return decorator
+        ```
 13. backslash: \
     - use for line continuation
     - use for escape char like
@@ -111,8 +235,8 @@ python important learning points
         - \n -> newline
         - \' -> '
 
-14. foward slash: /
-    - divie and path
+14. forward slash: /
+    - dir and path
     - note, path can be;
         - path = "C:\\Users\\Name\\file.txt"
             or path = r"C:\Users\Name\file.txt"
@@ -126,15 +250,46 @@ python important learning points
 
 16. docstring
     - define with 'or" or triple ' or ", for class & function/method & module
-    - use help(function/class/module ** no need () for func)
-    - or just function/class/module.__doc__
+    ```python
+    def add(a, b):
+        """
+        xxx
+        """
+        return a + b
+    ```
+    - call with
+    ```python
+    print(add.__doc__)
+    help(add)
+    ```
 
 17. __init__.py:
-    - can use to import function from others .py (from .other_file import func1) ** need to have the "."
-    - the folder that contain init+ other can be a module
-    - we can import it to other python file. from module import func1/ import module.func1
+    - to mark dir as package instead of namespace package
+        - namespace package: `import mypackage.module1`
+        - normal: can use above or `from mypackage import ...`
+    - package init code
+        ```python
+        # in mypackage/__ini__.py
+        print("mypackage is being imported")
+        ```
+    - control what get import from normal package `from mypackage import *`
+        ```python
+        # mypackage/__init__.py
+        from .module1 import func1
+        from .module2 import func2
+
+        __all__ = ["func1", "func2"] # only these 2 imported with *
+        ```
+    - put versioning data inside or shorten import path
+    ```python
+    __version__ = "1.0.0"
+    from .utils.helper import useful_func # then other package can "from mypackage import useful_func"
+    ```
 
 18. dynamically typed, but can use type hint
+    ```python
+    def greet(name: str, age: int) -> str:
+    ```
 
 19. floor/int:
     - math.floor(): toward small, 3.7->3, -3.7->-4
@@ -158,7 +313,7 @@ python important learning points
 
 24. generator:
     - (x for x in y)
-    - ```
+    - ```python
         def func(y): 
             for i in range(y): 
                 yield i
@@ -171,7 +326,7 @@ python important learning points
 25. iterator: all generator are iterator
     - any thing with next is iterator
 
-26. memory management: heap to manage, garabage collector, recyle unused memeroy and freee it out
+26. memory management: heap to manage, garbage collector, recycle unused memory and free it out
 
 27. monkey patching: dynamically modify class at run time, like change the class.func to other func
 
@@ -222,9 +377,36 @@ python important learning points
     better to use full path to avoid such problem
 
 37. to import a .py in parent dir. just use: sys.path.append(parent), then can import the filename
-    ```
+    ```python
     currentfile = os.path.realpath(__file__)
     current=os.path.dirname(currentfile)
     parent=os.path.dirname(current)
     sys.path.append(parent)
+    ```
+38. nonlocal & global
+    ```python
+    def outer():
+        x = "outer value"
+
+        def inner():
+            nonlocal x  # Refers to x in the nearest enclosing (non-global) scope
+            # for nested function to call outer function variable
+            x = "modified by inner"
+            print("Inner:", x)
+
+        inner()
+        print("Outer after inner:", x)
+    ```
+
+    ```python
+    x = "global value"
+
+    def change_global():
+        global x  # to call var in global, not function
+        x = "modified globally"
+        print("Inside function:", x)
+
+    change_global()
+    print("Outside function:", x)
+
     ```

@@ -551,7 +551,19 @@
         - may cause pause in application when clearing memory
         - clearing process not deterministic, unpredictable
         - may still temporarily increase memory usage if program create and discard many short-lived object
-    - type of garbage collector
-        - Minor
-        - Major
+    - type of garbage collector events
+        - Minor (print "GC")
+            - clean young generation ( Eden + Survivor space)
+            - trigger when Eden full
+            - fast, frequent, STW
+            - object survive multiple minor GC become old gen
+        - Major (print "Full GC")
+            - clean old gen (Tenured space)
+            - trigger when old gen full
+            - slower
+            - longer pause than minor
         - Full
+            - clean both young and old gen and metspace
+            - trigger when system.gc called or old gen full and GC cant free up memory or metaspace is exhausted
+            - STW
+            - longest pause
