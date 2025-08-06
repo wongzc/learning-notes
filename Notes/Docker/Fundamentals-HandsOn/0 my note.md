@@ -307,6 +307,72 @@
             - `kubectl get rs` - List replicasets
             - `kubectl delete -f [definition.yaml]` - Delete a deployment
             - `kubectl delete deploy [deploymentName]` - Same but using the deployment name
+    
+    - DaemonSet
+        - ensure all node run an instance of a pod
+            - when node add to cluster, daemon add pod to node
+        - scheduled by scheduler controller and run by daemon controller
+        - without daemon, will need manually schedule pod on each node by specify nodeselector or nodeName
+            - log collector pod
+            - monitoring agent
+            - network plugin
+        - to dont schedule on master node
+            - spec>tolerations>
+            - key: node-role.kubernetes.io/master
+              effect: NoSchedule
+        - command:
+            - `kubectl apply -f [definition.yaml]` - Create a DaemonSet  
+            - `kubectl get ds` - List DaemonSets  
+            - `kubectl describe ds [rsName]` - Get info  
+            - `kubectl delete -f [definition.yaml]` - Delete a DaemonSet  
+            - `kubectl delete ds [rsName]` - Same but using the DaemonSet name
+
+    - StatefulSet
+        - for pods that must persist or maintain state
+            - maintain sticky identity for each of their pod ( not like `Deployment`)
+            - each has persistent identifier ( name-x)
+            - when pod dies, replaced it and using the identifier
+        - create pod from 0 to x, delete from x to 0
+        - for network or storage
+        - to use it, need create a headless service
+            - `kind: Service`
+            - spec>`clusterIP:None`
+            - tell k8s not to load balance request, but to return actual IP/DNS record
+        - for stateful scenario
+            - can use StatefulSet, or
+            - can use Cloud provider database service
+        - delete stateful set wont delete the PVC, need manual delete
+        - command
+            - `kubectl apply -f [definition.yaml]` - Create a StatefulSet  
+            - `kubectl get sts` - List StatefulSets  
+            - `kubectl describe sts [rsName]` - Get info  
+            - `kubectl delete -f [definition.yaml]` - Delete a StatefulSet  
+            - `kubectl delete sts [rsName]` - Same but using the StatefulSet name
+
+    - Job
+        - workload for short lived tasks 
+        - create pod and ensure specified number of them successfully terminates
+            - after pod successfully complete, job tracks the successful completions
+            - when specified number of success compeltion reached, job complete
+        - to define a job
+            - `kind: Job`
+            - can set:
+                - max time to run: spec> `activeDeadlineSeconds: 30`
+                - how many pods in parallel: spec> `parallelism: 3` ( default 1)
+                - how many success completion needed: `completions: 3` ( default 1)
+            - need to set restart policy never!
+                - `restartPolicy: Never`
+                - tell k8s to let failed pod die and retry with new pod
+        - command
+            - `kubectl create job [jobName] --image=busybox` - The imperative way  
+            - `kubectl apply -f [definition.yaml]` - Create a Job  
+            - `kubectl get job` - List jobs  
+            - `kubectl describe job [jobName]` - Get info  
+            - `kubectl delete -f [definition.yaml]` - Delete a job  
+            - `kubectl delete job [jobName]` - Same but using the Job name
+
+
+
 
     
 
