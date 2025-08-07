@@ -14,6 +14,10 @@
 
     kubectl get pods -o wide
 
+## Describe the deployment
+
+    kubectl get deployment hello-dep -o yaml
+
 ## Describe the pod
 
     kubectl describe pod hello-dep
@@ -58,7 +62,7 @@ Edit the YAML file and change the container version from 1.0 to 2.0. Save the fi
 
     kubectl rollout undo deployment/hello-dep
 
-or
+or ( roll back specific version)
 
     kubectl rollout undo deployment/hello-dep --to-revision 1
 

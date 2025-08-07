@@ -371,6 +371,181 @@
             - `kubectl delete -f [definition.yaml]` - Delete a job  
             - `kubectl delete job [jobName]` - Same but using the Job name
 
+    - CronJob
+        - schedule run `Job`
+        - syntax: min(0-59) hour(0-23) day_of_month(1-31) month(1-12) day_of_week(0-6) command
+            - UTC only
+        - to define
+            - `kind:CronJob`
+            - spec>`schedule: "* * * * *`
+                - * means every, so above run every minutes
+        - look at history (`kubectl get pods`) to know if success
+            - keep last 3 success and 1 failed
+            - can set `successfulJobsHistoryLimit` or `failedJobsHistoryLimit` to 0 to keep no history
+        - command
+            - `kubectl create cronjob [jobName] --image=busybox --schedule="*/1 * * * *" -- bin/sh -c "date;"` - The imperative way  
+            - `kubectl apply -f [definition.yaml]` - Create a CronJob  
+            - `kubectl get cj` - List CronJobs  
+            - `kubectl describe cj [jobName]` - Get info  
+            - `kubectl delete -f [definition.yaml]` - Delete a CronJob  
+            - `kubectl delete cj [jobName]` - Same but using the CronJob name
+    
+    - RollingUpdate
+        - Deployment
+            - replicas: set number of instance
+            - revisionHistoryLimit: set number of previous iterations to keep
+            - strategy: ( 2 types)
+                - `RollingUpdate`: cycle through updating pods
+                    - `maxSurge`: max number of extra pod can be created during update
+                        - value or percent
+                        - default 25%
+                    - `maxUnavailable`: max number of unavailable during update
+                        - default 25%
+                - `Recreate`: kill all existing before create new one
+            - command
+                - `kubectl apply -f [definition.yaml]` - Update a deployment  
+                - `kubectl rollout status` - Get the progress of the update  
+                - `kubectl rollout history deployment [deploymentname]` - Get the history of the deployment  
+                - `kubectl rollout undo [deploymentname]` - Rollback a deployment  
+                - `kubectl rollout undo [deploymentname] --to-revision=[revision#]` - Rollback to a revision number
+
+    - Blue-Green Deployment
+        - blue: in production
+        - green: newer version, not yet in production
+        - when ready, update service to point to new version ( by label)
+        - so that at any time, all pods same version!!
+        - but
+            - does not solve new DB schema downtime
+            - need over provision for cluster size!!
+        
+    - Services
+        - to help pod-pod communication as IP of pod is ephemeral
+        - a k8s object type
+        - pod ip unreliable, service ip reliable
+            - static IP, DNS name, [servicename].[namespace].svc.cluster.local
+        - help to access pods
+        - target pod using `selector`
+        - type:
+            1. `ClusterIP` ( default service)
+            2. `NodePort`
+            3. `LoadBalancer` L4
+                - expose service outside of cluster
+            4. `Ingress` L7
+                - expose service outside of cluster
+
+    - `ClusterIP`
+        - only visible internal ( inside cluster)
+        - can set
+            - `post`: service listen to
+            - `targetPort`: selected pod listen to ( service route incoming to here)
+                - the select pod set `containerPort` same as this value
+        - use round robin to load balance
+        - use when want durable way to communicate with pod inside cluster
+        - command
+            - `kubectl expose po [podName] --port=80 --target-port=8080 --name=frontend` - Create a service to expose a pod  
+            - `kubectl expose deploy [deployName] --port=80 --target-port=8080` - Create a service to expose a deployment  
+            - `kubectl apply -f [definition.yaml]` - Deploy the service  
+            - `kubectl get svc` - Get the services list  
+            - `kubectl get svc -o wide` - Get extra info  
+            - `kubectl describe svc [serviceName]` - Describe the service  
+            - `kubectl delete -f [definition.yaml]` - Delete the service  
+            - `kubectl delete svc [serviceName]` - Delete the service using its name
+    
+    - `NodePort`
+        - extend cluster ip service
+        - visible internal + external
+        - `type: NodePort`
+        - `nodePort`: listening to external port
+            - range 30000-32767
+            - default random port
+        - `Port` & `TargetPort`
+        - Nodes must have public Ip address!
+            - use node ip+ nodeport to access service
+        - command:
+            - `kubectl expose po [podName] --port=80 --target-port=8080 --type=NodePort` - Create a service to expose a pod  
+                - cannot set nodeport number this way!!
+            - `kubectl expose deploy [deployName] --port=80 --target-port=8080 --type=NodePort --name=frontend` - Create a service to expose a deployment  
+            - `kubectl apply -f [definition.yaml]` - Deploy the service  
+            - `kubectl get svc` - Get the services list  
+            - `kubectl get svc -o wide` - Get extra info  
+            - `kubectl describe svc [serviceName]` - Describe the service  
+            - `kubectl delete -f [definition.yaml]` - Delete the service  
+            - `kubectl delete svc [serviceName]` - Delete the service using its name
+    
+    - `LoadBalancer`
+        - expose service outside of cluster at L4
+        - transport level ( TCP )
+        - unable to make decision based on content
+        - simple algorithm like round robin
+        - `type: LoadBalancer`
+    
+    - `Ingress`
+        - expose service outside of cluster at L7
+        - application level (HTTP, SMTP, etc)
+        - can route based on content 
+    
+    - Storage & Persistency
+        - volume:
+            - store data outside of container
+            - static and dynamic way to use storage
+        - objects
+            - Persistent Volume
+            - StorageClass
+        - static way
+            - persistent volumes (PV)
+                - represent storage resource
+                - cluster wide
+                - provisioned by admin
+            - persistent volume claim (PVC)
+                - 1-1 mapping to persistent volume
+                - pod can use a PVC to mount folder
+                    - inside pod, all container share the volume
+                    - unless access mode is `ReadWriteMany` and storage support it, else 1 PVC claim can be mounted by 1 pod at a time
+            - many different type
+            - drawback:
+                - waste of resource when a pod has the claim but only use small amount
+            - to use a PV
+                - select cloud provider
+                - define PV, set required capacity
+                - create PVC
+                - use PVC from pod to mount
+            - reclaim policies
+                - `Delete`: default, delete all data upon pod deletion
+                - `Retain`: keep data when pod delete
+            - Access modes
+                - `ReadWriteMany`: mounted as RW by multi pods
+                - `ReadOnlyMany`
+                - `ReadWriteOnce`: 
+                    - first pod mounted can read-write
+                    - the other read only
+            - to create PV: `kind: PersistentVolume`
+                - **hostPath only use for local testing, single-node cluster
+            - to create PVC: `kind: PersistentVolumeClaim`
+                - access mode of the PVC and PV need to match
+                - set request how many storage from the PV, the rest no one can claim
+                - on our pod, put under volume: `claimName: myclaim`
+                    - also rmb to set `mountPath` to mount it to volume
+            - state:
+                - available: free, not yet bound
+                - bound: bound to claim
+                - released: claim deleted, not yet reclaimed by cluster
+                - failed: failed auto reclamation
+            - command:
+                - `kubectl apply -f [definition.yaml]` - Deploy the PVs and PVCs  
+                - `kubectl get pv` - Get the PV list  
+                - `kubectl get pvc` - Get the PVC list  
+                - `kubectl describe pv [pvName]` - Describe the PV  
+                - `kubectl describe pvc [pvcName]` - Describe the PVC  
+                - `kubectl delete -f [definition.yaml]` - Delete the PVs and PVCs  
+                - `kubectl delete pv [pvName]` - Delete the PV using its name  
+                - `kubectl delete pvc [pvcName]` - Delete the PVC using its name
+        - dynamic way
+
+
+
+
+
+
 
 
 

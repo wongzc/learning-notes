@@ -7,4 +7,4 @@ spec:
   - port: 8080
     targetPort: 8080
   selector:
-    app: hello-v1
+    app: hello-v2
