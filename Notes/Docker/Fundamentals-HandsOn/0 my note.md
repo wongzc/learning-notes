@@ -540,6 +540,141 @@
                 - `kubectl delete pv [pvName]` - Delete the PV using its name  
                 - `kubectl delete pvc [pvcName]` - Delete the PVC using its name
         - dynamic way
+            - storage class
+                - describe class of storage object offered by admin
+                - abstraction on top of external storage resource
+                - no need to set capacity, no need admin provision
+            - to use:
+                - select cloud provider
+                - define storage class
+                - create PVC that refer to storage class ( set required capacity)
+                - mount
+            - reclaim policies
+                - Delete: default, delete data upon pod deletion
+                - Retain: need to set to keep data when pod delete
+            - Access Modes
+                - `ReadWriteMany`
+                - `ReadOnlyMany`
+                - `ReadWriteOnce`
+            - to create storage class
+                - `kind: StorageClass`
+                - need to put `provisioner` for the provider, and `parameters`
+            - create a PVC
+                - `kind: PersistentVolumeClaim`
+                - metadata> `name:` need to be the same as the storage class name
+                - define access modes, capacity required
+                - on our pod, put under volume: `claimName: myclaim`
+            - storage class benefit
+                - no need define capacity
+                - multiple claim can be made
+            - command
+                - `kubectl apply -f [definition.yaml]` - Deploy the StorageClass or PVC  
+                - `kubectl get sc` - Get the StorageClass list  
+                - `kubectl get pvc` - Get the PVC list  
+                - `kubectl describe sc [className]` - Describe the StorageClass  
+                - `kubectl delete -f [definition.yaml]` - Delete the SC and PVC  
+                - `kubectl delete sc [className]` - Delete the SC using its name  
+                - `kubectl delete pvc [pvcName]` - Delete the PVC using its name
+    
+    - `ConfigMaps`
+        - decouple and externalize config, refer them as env variable
+        - can be create from
+            - YAML
+            - files
+            directories
+        - static, if changes, nee restart container to get
+        - to create:
+            - `kind: ConfigMap`
+            - under `data`, put key value pair
+            - put a `|` after key for multiline content
+        - to use:
+            - in pod definition, under `env`, for the value, `valueFrom> configmapKetRef`
+            - use name refer to config map name, and key refer to the kv pair
+        - can use config map as file, and map it as a volume, to workaround the static issue
+        - command:
+            - `kubectl create configmap literal-example --from-literal="city=Ann Arbor" --from-literal=state=Michigan` - The imperative way  
+            - `kubectl apply -f [cf.yaml]` - The declarative way  
+            - `kubectl create cm [name] --from-file=myconfig.txt` - From a file  
+            - `kubectl create cm [name] --from-file=config/` - From a folder  
+            - `kubectl get cm` - List the ConfigMaps  
+            - `kubectl get cm [name] -o YAML` - Save a ConfigMap in a YAML file  
+            - `kubectl delete -f [cf.yaml]` - Delete a ConfigMap
+    
+    - `Secrets`
+        - many secrets type
+        - stored as base64 encoded strings, not encrypt. ( not secure)
+        - can protect with RBAC authorization policies
+            - or just use cloud provider secret management
+        - to create
+            - `kind: Secret`
+            - under data, put base64 encrypted strings
+        - to use
+            - under `env`, `valueFrom>secretKeyRef` to state
+        - can also mount volume on top of secret ( mount secret as volume)
+        - command:
+            - `kubectl create secret generic [secretName] --from-literal=STATE=Michigan` - The imperative way  
+            - `kubectl apply -f [secret.yaml]` - The declarative way  
+            - `kubectl get secrets` - List the Secrets  
+            - `kubectl get secrets [secretName] -o YAML` - Save a Secret in a YAML file  
+            - `kubectl delete -f [secret.yaml]` - Delete a secret  
+            - `kubectl delete secrets [secretName]` - Delete a secret
+    
+    - Observability
+        - when pod crash, k8s create a new instance, cause k8s monitor infrastructure
+        - app crash?
+            - use Probes
+        - Startup probes
+            - know when container started  
+            ![alt text](image.png)
+                - to wait 10s before get from page healthz
+                - try 3 times
+        - Readiness probes
+            - know when container ready to accept traffic
+            - failing RP will stop application receive traffic  
+            ![alt text](image-1.png)
+                - wait 5s, then every 10s check port 8080
+        - Liveness probe
+            - indicate if code running
+            - failing LP will restart the container  
+            ![alt text](image-2.png)
+                - wait 15s, then every 20s check 8080
+        - probing container
+            - kubelet check container using probes
+            - ExecAction, `exec`: execute command inside container
+            - TCPSocketAction, `tcpSocket`: check if TCP socket port open
+            - HTTPGetAction, `httpGet`: use HTTP to get
+
+    - Dashboards
+        - k8s webUI
+            - not installed by default
+        - Lens
+            - k8s IDE
+            - run locally on Mac, windows, linux
+        - K9s
+            - fast 
+    
+    - scale pods
+        - use k8s metric server to scale
+        - pod must have requests and limits defines  
+        ![alt text](image-3.png)
+        - HPA (horizontal pod autoscaling) check the metric server every 30s
+        - scale according to min/max number or replica defined  
+        ![alt text](image-4.png)
+        - cooldown/delay
+            - to prevent race condition
+            - once a change made, HPA wait
+            - scale up delay 3 min, scale down delay 5 min
+        - HPA command
+            - `kubectl autoscale deployment [name] --cpu-percent=50 --min=3 --max=10` - The imperative way  
+            - `kubectl apply -f [hap.yaml]` - The declarative way  
+            - `kubectl get hpa [name]` - Get the autoscaler status  
+            - `kubectl delete -f [hap.yaml]` - Delete the HPA  
+            - `kubectl delete hpa [name]` - Delete the HPA
+
+
+
+        
+
 
 
 
