@@ -2,13 +2,19 @@
 ### source: xiaolincoding
 https://xiaolincoding.com/network
 
-1. all network follow TCP/IP model, 4 layers
-    1. application layer
+1. all network follow TCP/IP model, 4 layers. (OSI 7 layers, some same some different)
+    1. application layer ( level 7 in OSI)
         - OSI: application, presentation, session layer
-        - HTTP, HTTPS
+        - HTTP, HTTPS, FTP, DNS, SMTP, SFTP(use SSH), SSH ( use TCP at layer 4)
         - focus on provide function to user
+        - TLS and the old SSL happens here ( OSI: between 6 & 7, as they dont define app logic, but transform data)
+        - TLS handshake ( after TCP):
+            - ClientHello → proposes cipher suites, random number
+            - ServerHello → picks cipher, sends certificate, random number
+            - (Optional) ServerKeyExchange / ClientKeyExchange → exchange keys
+            - Finished → both sides send “finished” messages encrypted with session key
 
-    2. transport layer
+    2. transport layer ( level 4 in OSI)
         - TCP, UDP
             - TCP (Transmission Control Protocol): 
                 1. flow control
@@ -16,10 +22,18 @@ https://xiaolincoding.com/network
                 3. congestion control
             - UDP:
                 1. faster
-        - network support for application layer
-        - data sent by application layer if bigger than MSS ( largest length of TCP segment), need to seperate into different segment
+        - network support for end to end communication between 2 application layer over port
+        - TCP
+            - data sent by application layer if bigger than MSS ( largest length of TCP segment), need to seperate into different segment
             - if any segment lost/ corrupted, resend only the segment
-            - need to specify port on device to send, as many application on device is receving as well.
+            - MSS decide during handshake
+            - connect: SYN->server, SYNACK->client, ACK->server
+            - disconnect: FIN->server,ACK->client,FIN->client,ACK->server
+        - UDP dont have MSS
+        - need to specify port on device to send, as many application on device is receving as well.
+        - less common: SCTP, DCCP
+        - UDP: DHCP, SNMP,NTP, TFTP
+        - TCP: HTTP,HTTPS,FTP,SMTP,SFTP,SSH
 
     3. network layer/ internet layer
         - IPV4, IPV6
@@ -27,11 +41,14 @@ https://xiaolincoding.com/network
         - using IP ( internet protocol), translate message into IP data
             - if bigger than MTU (1500 byte) will split again
             - each split wtih TCP head, IP head, MAC head ( MAC not include in MTU)
+            - MSS + IP head +TCP head = MTU
+            - though UDP dont have MSS, but still limited by MTU
         - to locate device when transfer data:
             - network id: identify subnet belong to which IP address
             - host id: identify different host under same subnet
                 - use subnet mask to calculate network ID & host ID
                     - xxxx/24 means mask = 255.255.255.0 ( 11111111.11111111.11111111.00000000)
+                    - mask is not always multiple 8
                     - use "AND" between mask & IP to get network ID
                         - 00001010.1100100.1111010.00000010 with 11111111.11111111.11111111.00000000
                         - get 0001010.1100100.1111010.00000000
@@ -79,7 +96,7 @@ https://xiaolincoding.com/network
                 - request IP address from local DNS server (server address in client TCP/IP setting)
                 - if in cache, return, else check with root DNS (.)
                 - then root will redirect to top-level DNS (.com)
-                - then redirect to authoratuve DNS, and get IP
+                - then redirect to authorative DNS, and get IP
                 - browser then send http request to IP addres
             - will check browser cache, then os cache, then host file, before request from local DNS
         3. protocol stack
