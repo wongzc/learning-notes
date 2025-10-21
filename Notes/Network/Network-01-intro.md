@@ -30,6 +30,7 @@ https://xiaolincoding.com/network
             - connect: SYN->server, SYNACK->client, ACK->server
             - disconnect: FIN->server,ACK->client,FIN->client,ACK->server
         - UDP dont have MSS
+            - it dont care, it just give to network layer and let it decide
         - need to specify port on device to send, as many application on device is receving as well.
         - less common: SCTP, DCCP
         - UDP: DHCP, SNMP,NTP, TFTP

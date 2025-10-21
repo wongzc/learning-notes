@@ -25,34 +25,40 @@ https://xiaolincoding.com/mysql
 2. what issue happen when concurrent?
     - MySQL allow multiple client connect at the same time, means handle multiple transaction
     - problem:
-        1. dirty read
+        1. dirty read [D]
             - happen when transaction A read a non-commited data from another transaction B
             - which if B rollback, A get wrong data
-        2. non-repeatable read
+        2. non-repeatable read [NRR]
             - two read of the same item in 1 transaction give different result
             - maybe due to item being updated by another transaction
-        3. phantom read
+            - reading same row twice and get different data
+        3. phantom read [P]
             - in 1 transaction, if number of records matching differs between 2 queris
+            - execute range query twice and get more/less rows ( inserted/deleted by another transaction)
 
 3. transaction isolation
     - seriousness: 
         - dirty > non-repeatable > phantom
+            - dirty: violate isolation and atomicity as read uncommited data
+            - non-repeatable: violate isolation but only for existing row
+            - Phantom read: violate isolation at set level, only bad when we depends on aggregated data
     - SQL created 4 type of isolation level to avoid:
-        1. read uncommited: 
-            - uncommited transaction can be seen by other transaction
-        2. read commited: 
-            - only commited transaction can be seen by other transaction
-        3. repeatable read: 
+        1. READ UNCOMMITTED: 
+            - uncommitted transaction can be seen by other transaction
+            - may have D,NRR,P
+        2. READ COMMITTED: 
+            - only committed transaction can be seen by other transaction
+            - may have NRR, P
+        3. REPEATABLE READ: 
             - default in MySQL innoDB
             - data that a transaction read is always same
-        4. serialize
+                - no defense againt new/ delete data
+                - but actually MySQL RR is good enough to protect Phantom read
+            - may have P
+        4. SERIALIZABLE
             - lock a record
             - if any conflict, the later need to wait for the earlier
-    - isolation level:
-        1. serialize: solve all problem 
-        2. repeatable read: phantom read
-        3. read commited： phantom read + non repeatable
-        4. read uncommited: all issue!
+            - all good
     - but in reality, MySQL repeatable read can avoid most phantom read
         - so no need serialize, which affect performance
         - for snapshot read: `SELECT`
@@ -64,14 +70,16 @@ https://xiaolincoding.com/mysql
     - how to implement the 4 isolation level?
         1. serialize: use a lock for read write
         2. repeatable read: create a `read view` ( snapshot) before the whole transaction start
-        3. read commited：create a `read view` before each command
-        4. read uncommited: always read latest data
+            - readview + next key lock ( record+gap lock)
+        3. read committed：create a `read view` before each command
+        4. read uncommitted: always read latest data
     - 2 type of transaction start command:
         1. begin/start transaction
             - after this, transaction doesnt start.
             - only start after first `SELECT`
         2. start transaction with consistent snapshot
             - transaction start after this
+
 4. read view
     - 4 columns in read view:
         1. creator_trx_id
@@ -87,11 +95,11 @@ https://xiaolincoding.com/mysql
         1. trx_id
             - when a transaction changed a clustered index record, it record the id in
         2. roll_pointer
-            - when changed clustred index record, older ver will be written into undo log
+            - when changed cluster index record, older ver will be written into undo log
             - pointer to undo log
     - so when transaction visit records:
         - trx_id < min_trx_id:
-            - it commited before read view created, can be seen by current transaction
+            - it committed before read view created, can be seen by current transaction
         - trx_id >= max_trx_id:
             - it created after read view, cant be seen by current transaction
             - need to use roll pointer to check down
@@ -100,14 +108,14 @@ https://xiaolincoding.com/mysql
                 - havent commit when read view created, cant be seen
                 - need to use roll pointer to check down
             - if not in m_ids:
-                - commited when read view created, can be seen
+                - committed when read view created, can be seen
         - this is call `MVCC`, control by version chain
 
-5. repeatble read
-    - create a read view when transaction started, and use the same read view througout transaction
+5. repeatable read
+    - create a read view when transaction started, and use the same read view through out transaction
 
-6. read commited
-    - create a read view everytime read data
+6. read committed
+    - create a read view every time read data
 
 7. MySQL repeatable read completely solved phantom read?
     - snapshot read solved by MVCC

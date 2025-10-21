@@ -19,12 +19,31 @@ https://xiaolincoding.com/mysql
 
 2. undo log
     - eventhough no `begin` and `commit`, MySQL will start a hidden transaction when update/insert/delete
-        - and auto commit (depends on confi `autocommit`)
-    - undo log recorded the information requied to undo, to ensure atomicity
+        - and auto commit (depends on config `autocommit`)
+    - undo log recorded the information required to undo, to ensure atomicity
     - for example:
         - insert: record primary index, if undo, just delete the record based on index
+        ```
+        Operation: INSERT
+        Table: employee
+        New Row Data: (id=3, name='Bob', salary=4500)
+        Transaction ID: <trx125>
+        ```
         - delete: if undo, just reinsert
+        ```
+        Operation: DELETE
+        Table: employee
+        Old Row Data: (id=1, name='Alice', salary=5000)
+        Transaction ID: <trx124>
+        ```
         - update: if undo, just roll back old value
+        ```
+        Operation: UPDATE
+        Table: employee
+        Old Row Data: (id=1, salary=5000)
+        Transaction ID: <trx123>
+        Roll Pointer: <points to undo log entry>
+        ```
     - undo log have:
         - `roll_pointer`: point to previous record
         - `trx_id`: which transaction updated the record
@@ -65,6 +84,9 @@ https://xiaolincoding.com/mysql
 4. redo log
     - buffer pool is in memory, data may lost if system fail
     - when update, innoDB update buffer pool and mark it as dirty page, and write the change as redo log
+        - why dont just write update data directly/
+        - data pages scattered across data file
+        - need to seek, write 16kb, slower than just append redo log
     - Write-Ahead Logging (WAL): 
         - technique that innoDB write change to log, then update dirty page in buffer pool to disk
     - when system fail, just based on redo log to create the latest state
@@ -82,8 +104,8 @@ https://xiaolincoding.com/mysql
             - MySQL shutdown
             - data write into redo log buffer > 50% of total volume
             - innoDB background process, every seconds
-            - everytime when transaction commited, controlled by `innodb_flush_log_at_trx_commit`
-    - `innodb_flush_log_at_trx_commit` control when transaction commited
+            - everytime when transaction committed, controlled by `innodb_flush_log_at_trx_commit`
+    - `innodb_flush_log_at_trx_commit` control when transaction committed
         - 0: keep redo log in redo log buffer
         - 1: write redo log from redo log buffer to disk. default value
         - 2: write redo log from redo log buffer to redo log file ( not disk, it is in os page cache)
@@ -119,7 +141,7 @@ https://xiaolincoding.com/mysql
             - binlog created by MySQL server layer, all storage engine can use
             - redo log created by innoDB
         2. format:
-            - binlog have 3 types:
+            - binlog have 3 format types:
                 1. STATEMENT
                     - record SQL statement that ran on master, then ran on slave.
                     - problem with dynamic function like uuid, may cause difference btw master & slave
@@ -133,6 +155,7 @@ https://xiaolincoding.com/mysql
                 - physical diary of what change done on which table, which page
         3. write in method:
             - binlog is append, if full, create another file
+                - binlog Written after a transaction commit
             - redo log is circular, fixed space
         4. usage:
             - binlog for backup, master-slave replication
@@ -164,13 +187,13 @@ https://xiaolincoding.com/mysql
                 - master transaction thread wait for some slave complete dupliacte bin log
     - when bin log write to disk?
         - during transaction, binlog write to binlog cache
-        - when transaction commited, write from binlog cache to binlog file
+        - when transaction committed, write from binlog cache to binlog file
             - in page cache, not in disk, need `fsync` to disk
         - binlog can not be splitted. due to 1 thread 1 transaction & atomicity of transaction
             - must be write to disk in 1 operation
         - binlog cache: memory that every thread have for binlog caching
             - size depends on config `binlog_cache_size`
-        - `sync_binlog` control when transaction commited
+        - `sync_binlog` control when transaction committed
             - 0: write to page cache, os to decide fsync. default
                 - faster, but risky
             - 1: write and fsync
@@ -186,7 +209,7 @@ https://xiaolincoding.com/mysql
     7. record binlog and save to binlog cache
     8. 2 stage submit
 7. 2 stage submit
-    - after transaction commited, both redo log & bin log need to save to disk.
+    - after transaction committed, both redo log & bin log need to save to disk.
         - if redo log success and bin log fail: master updated, slave outdated
         - if redo log fail and bin log success: master outdated, slave updated
     - 2 stage submmit:
@@ -201,11 +224,11 @@ https://xiaolincoding.com/mysql
             - save binlog to disk (if `sync_binlog` = 1)
             - server API to set redo log status as commit
     - fail during 2 stage commit
-        - MySQL scan redlog sequentially, if any redo log in prepare stage, cehck if XID in binlog
+        - MySQL scan redo log sequentially, if any redo log in prepare stage, check if XID in binlog
         - XID not in binlog: fail before binlog saved, rollback
         - XID in binlog: fail after binlog saved, commit
-    - uncommited transaction redo log also saved in disk, but will rollback if system fail & restart
-        - binlog only save to disk when commited
+    - uncommitted transaction redo log also saved in disk, but will rollback if system fail & restart
+        - binlog only save to disk when committed
     - problem of 2 stage commit:
         - high disk I/O
             - binlog save in binlog cache
@@ -216,7 +239,7 @@ https://xiaolincoding.com/mysql
             - `prepare_commit_mutex`: transaction need to obtain this lock to move to `prepare` and release after `commit`
                 - problem when multithread, causing competition
             - group commit
-                - combined multiple commited transaction into 1
+                - combined multiple committed transaction into 1
             - new stage:
                 1. prepare
                     - in mySQL 5.7, transaction dont fsync redo log to disk seperately, do it in flush
@@ -230,7 +253,7 @@ https://xiaolincoding.com/mysql
                 4. commit
                     - innoDB commit sequentially
 8. optimize disk I/O for MySQL
-    - `binlog_group_commit_sync_delay`: to delay binglog write to disk ( wont fail if MySQL crash, fail if OS crash)
+    - `binlog_group_commit_sync_delay`: to delay binlog write to disk ( wont fail if MySQL crash, fail if OS crash)
     - `binlog_group_commit_sync_no_delay_count`: same as above
     - `sync_binlog`: set to mroe than 1 ( usually 100-1000), only fsync after N write for binlog ( risk for losing N binlog if OS crash)
     - `innodb_flush_log_at_trx_commit`: set to 2, only write to file in page cache, os to control save to disk ( risk for losing data if OS crash)

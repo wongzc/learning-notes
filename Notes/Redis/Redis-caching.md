@@ -69,6 +69,11 @@ https://xiaolincoding.com/redis/
         -  can be use for first delete cache then update db
         - delete cache, update db, then sleep and delete cache
         - may not be very effective
+    - best:
+        1. update DB
+        2. delete cache
+        - why? if update cache then db, may have old data rewrite cache
+        - if del cache then db, similar
     
     - to makesure update & delete cache both success
         - 2 method:
