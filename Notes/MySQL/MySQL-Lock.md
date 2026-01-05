@@ -225,7 +225,7 @@ summary
 
 6. MySQL Deadlock
     - how dead lock?
-        - innoDB have next-key lock, to solve phantom read that may happen under repeatble read
+        - innoDB have next-key lock, to solve phantom read that may happen under repeatable read
         - normal `select` wont lock, it is snapshot, so MVCC.
         - if `select ... in share mode` or `select ... for update`, will lock, until `commit`
             - need to take note, gap lock & gap lock co-exist, i.e., 2 `select... for update` wont affect each other
@@ -234,7 +234,7 @@ summary
             - insert intention lock cannot co-exit with gap lock
                 - it generate when trying to insert
                 - if the range is gap-locked, it will be pending.
-        - so Deadlock happend when 2 transaction, usign gap lock to lock a overlapped range
+        - so Deadlock happend when 2 transaction, using gap lock to lock a overlapped range
         - then both trying to insert but cant, due to blocking of each other.
         - cannot compete means cannot release, means continue block!
 

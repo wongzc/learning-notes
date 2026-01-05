@@ -153,13 +153,13 @@ https://xiaolincoding.com/redis/
 2. data type to underlying data structure
     - String: SDS     
     - list:
-        - quicklist
+        - quicklist ( list node + zip list)
     - Hash:
-        - listpack: small hash
+        - listpack: small hash ( ziplist without prevlen)
         - hash table: large hash
     - Set:
-        - int set: used if all element in set are integer and number<512 ( default) 
+        - int set: used if all element in set are integer and count<512 ( default) 
         - hash table: if contain non-int or >maxintset, use this
     - zset:
-        - listpack: length <128>, element also <64bit
+        - listpack: length <128>, element also <64bit ( ziplist without prevlen)
         - skip list+ hash table

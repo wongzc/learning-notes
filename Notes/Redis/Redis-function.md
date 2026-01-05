@@ -65,9 +65,9 @@ https://xiaolincoding.com/redis/
         3. volatile-ttl:
             - ttl shorter will be deleted first
         4. volatile-lru:
-            - least recent used key deleted first
+            - least recent used key with ttl deleted first
         5. volatile-lfu
-            - least frequent used key deleted first
+            - least frequent used key with ttl deleted first
         6. allkeys-random
         7. allkeys-lru
         8. allkeys-lfu

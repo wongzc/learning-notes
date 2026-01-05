@@ -410,3 +410,8 @@ python important learning points
     print("Outside function:", x)
 
     ```
+39. context manager and similar stuff
+
+40. multithread/ asyncio/ multi processing GIL advance
+
+41. yield, generator

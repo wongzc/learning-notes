@@ -73,7 +73,7 @@ https://xiaolincoding.com/redis/
     
 3. RDB (Redis Database Backup)
     - create snapshot of datasets at specific interval
-    - faster than AOF
+    - faster than AOF when recover data
 
     - 2 command to create RDB:
         - save: run in main process, may block if writing time too long, but dont need fork, impact redis perfrm
