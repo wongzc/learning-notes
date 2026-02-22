@@ -36,10 +36,11 @@ https://xiaolincoding.com/redis/
             1. execute write
             2. command added to server.aof_buf
             3. write() to write aof_buf data to page cache
-            4. kernel to write to disk
+            4. kernel to write to disk (fsync())
         - redis.conf, appendfsync can control step 4
             1. Always: after write, always sync to AOF file
-                - less data lost, but block next write!
+                - less data lost, but block next fsync()!
+                - fsync() slow as writing to disk
             2. Everysec: every second, write page cache to disk
                 - more balance between data loss & blocking
             3. No: os to decide when to write from page_cache to disk

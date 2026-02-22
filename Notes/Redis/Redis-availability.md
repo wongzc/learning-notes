@@ -48,7 +48,7 @@ https://xiaolincoding.com/redis/
         2. send RDB
     - big problem if too much slave, main process will be busy at `fork()`, and block main process
     - sending RDB will cause pressure to network bandwidth, impacting request to master.
-    - to solve this, create a slave master to incharge of slave. by `replicaof <ip> <port>`
+    - to solve this, create a slave master to in charge of slave. by `replicaof <ip> <port>`
 
 5. Incremental Replication
     - happend after network discnnected between master and slave.

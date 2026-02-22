@@ -47,7 +47,11 @@ https://xiaolincoding.com/redis/
             - entry:
                 - prevlen: previous entry length, for back to front iteration
                     - prevlen <254, use 1 byte
+                        - 1 byte can be 0-255
+                        - but 254 (0xFE) used to means extended length
+                        - 255 (0xFF) used as ziplist end marker
                     - prevelen >=254, us 5 byte
+                        - 0xFE + 4 byte
                 - encoding: data type and length 
                     - if data is int, use 1 byte to encode
                     - if data is string, use 1/2/5 byte encode, depends on length
@@ -97,7 +101,7 @@ https://xiaolincoding.com/redis/
         - bad:
             - if data size too big, may have hash key conflict
     5. int set
-        - continuos memory
+        - continuous memory
         - consist of:
             - encoding: decide content element data size
             - length: number of element
@@ -105,16 +109,16 @@ https://xiaolincoding.com/redis/
         - intset upgrade, when new element having larger size than current, say insert int32 into int16 set
             - will not assign new space
             - expand based on current, then assign the value to the new space 1 by 1
-            - why inset upgrade:
+            - why insert upgrade:
                 - save space when the array only have smaller int, only upgrade when big int added
-            - after int set upgarde, wont downgrade
+            - after int set upgrade, wont downgrade
     6. skip list
         - only zset use skiplist 
             - in zset struct, actually we have skip list and hash table
         - when insert/update new data, data will be insert into both skip list and hash table
             - support range query, as we use skiplist
             - can get element score in O(1), as we use hash table
-            - hash table is only use for retriving elemebt score in constant time in zset
+            - hash table is only use for retriving element score in constant time in zset
             - the other will use skip list
         - skip list design
             - each skiplistnode keep:

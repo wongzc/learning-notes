@@ -50,7 +50,7 @@ https://xiaolincoding.com/redis/
                 - else, stop and wait
                 - max execute time 25 ms to avoid blocking
 
-2. Eviction Policy
+2. Eviction Policy 淘汰策略
     - use eviction policy to delete key when redis memory exceed threshold
     - set at `maxmemory <byte>` in redis.conf
         - default value for 64 bit is 0, ie, no limit
