@@ -45,6 +45,7 @@ https://xiaolincoding.com/mysql
 3. primary vs secondary index
     - primary index: leaf node store data
         - clustered index
+            - means data clustered at this B+ Tree
         - innonDB always create a clustered index when create table, index select by:
             1. primary index if it exist
             2. else, unique column that doesnt contain `NULL`
@@ -71,6 +72,7 @@ https://xiaolincoding.com/mysql
         - AVL tree: left & right height diff maximum 1, keep complexity as O(logn)
         - red-black tree
         - problem: more element, higher tree, I/O larger. the real problem: it is binary tree! only connect to 2 node!
+            - more levels -> more page read -> more I/O
     5. B tree
         - each node have M child ( M>2)
         - if M=3, each node have maximum 2 data and 3 child

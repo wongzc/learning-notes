@@ -1,0 +1,226 @@
+# HTTP
+### source: xiaolincoding
+https://xiaolincoding.com/network/2_http/http_interview.html
+
+1. HTTP basic
+    - HyperText Transfer Protocol
+        - Transfer
+            - bidirectional transfer
+            - can have middleman between src and dest
+        - Hypertext
+            - content of delivery
+            - means more than text ( image/ video etc)
+    - status code
+        - 1xx
+            - hint, less use
+        - 2xx
+            - success
+            - 200 OK: usually with response body
+            - 204 no Content: like 200, but no body
+            - 206 partial content: body not completed
+        - 3xx
+            - redirection
+            - 301 move permanently: need to use new url as original resource not there any more, will provide new url and browser redirect
+            - 302 not found: similar to above but temporary moved
+            - 304 not modified: redirect to cached content
+        - 4xx
+            - client request error
+            - 400 bad request: client request error
+            - 403 forbidden: not client error, just not allow
+            - 404 not found: not found
+        - 5xx
+            - server error
+            - 500: server error (generally only)
+            - 501 not implemented: function not ready
+            - 502 bad gateway: proxy ok, but backend not ok
+            - 503 service unavailable: server busy
+    - HTTP headers
+        - Host: indicate server domain name
+        - Content-Length: 
+            - length of response (when server returned), to inform browser
+            - to solve sticky packet problem, to define the boundary of next TCP
+        - Connection
+            - example: `Connection: Keep-Alive` ( default)
+            - keep TCP connection if no one disconnect
+            - client using same connection to send to server
+        - Content type
+            - server to inform client what data type in response
+        - Accept:
+            - client to tell server which data type it accept
+        - Content-Encoding
+            - compress method by server response
+            - example: `Content-Encoding: gzip`
+        - Accept-Encoding: 
+            - what compress method client ok:
+            - example: `Accept-Encoding: gzip, deflate`
+    - GET vs POST
+        - GET
+            - get resource from server
+            - parameter in URL ( only ASCII)
+            - URL length limited
+        - POST:
+            - to do something on resource
+            - data in body ( any format)
+            - no size limit
+        - by def, GET is safe and idempotent ( same result no matter run how many times)
+            - so GET result can be cache by browser
+            - but developer may not follow such rule and use GET to modify, use POST to get data
+    - HTTP cache
+        - cache for repeated HTTP request
+        - 2 types:
+            - strong caching: browser check and use cache
+                - control by `Expires` or `Cache-Control` from server response
+                - Expire: absolute time
+                - Cache-Control: 1 hour etc, priority higher than `Expire`
+            - conditional caching
+                - when client received 304 from server response, inform just use local cache
+                - 2 way to implement
+                    - request with `If-Modified-Since` and response with `Last-modified`
+                        - if local resource with `Last-modified` and expire, client request with this in `If-Modified-Since`.
+                        - then server check and compare, if server side no change, return 304
+                    - request with `If-none-Match` and response `Etag`
+                        - this method is higher priority than above
+                        - when local resource with `Etag` expire, browser send it in `If-none-Match`, server check and decide if 304
+                        - `Etag` is unique identifier, more accurate than timestamp
+    - HTTP/1.1
+        - advantage
+            - simple:
+                - format: header + body
+                - header: key-value
+            - flexible
+                - method/ status/ header not fixed , can be change
+                - HTTP at app layer, layer below can change
+                    - like HTTPS = HTTP +TLS 
+            - widely used
+        - downside
+            - stateless
+                - good: server less load as no need remember
+                - bad: need auth for all operation
+                    - usually use cookies
+            - plaintext
+                - easy debug, but easily stolen info
+            - safety
+                - plaintext, no auth
+        - performance
+            - keep-alive:
+                - HTTP/1.0 need TCP handshake everytime, high transport cost
+                - HTTP/1.1 have `keep-alive` option, less server load
+            - pipeline:
+                - have `keep-alive`, so can have pipeline
+                - multiple client request in same TCP connection, no need to wait for first request complete
+                - request not blocked, but response may blocked ( if need more time to do)
+            - congestion
+                - when 1 of the request blocked, subsequent also blocked!
+            - perf okok, 2 & 3 better
+    - HTTPS:
+        - after TCP 3 handshake, TLS handshake to encrypt
+        - need to get cert from CA to ensure server is trustable
+        - how HTTPS safe:
+            1. Hybrid encryption
+                - to prevent eavesdropping ( data stolen )
+                - before comm: asymmetric encrypt to exchange session key ( expensive)
+                - during comm: symmetric encrypt data ( fast)
+            2. Hash Algorithm + Digital Signature
+                - to prevent data change by others
+                - generate a hash and send with data
+                    - the hash encrypted with private key ( this is digital signature)
+                    - **note, asymmetric only on hash, not message, for efficiency**
+                - receiver compute hash and check with the sent hash
+                    - client verify with public key
+            3. Digital Certificates
+                - server public key embedded in digital cert by CA
+                - browser verify cert with CA
+        - how HTTPS connect?
+            - TLS handshake ( RSA or ECDHE)
+                1. client hello
+                    - send supported TLS ver, client random number, client support cipher
+                2. server hello
+                    - send confirm tls ver, cipher
+                    - send server random number and cert
+                3. client response
+                    - check cert with CA
+                    - get public key from cert
+                    - send to server
+                        - pre-master key
+                        - inform subsequent message use encrypt
+                        - inform server handshake end
+                    - hash everything for verification later
+                4. server response:
+                    - compute key using pre-master key, client random, server random
+                    - inform client subsequent message encrypt
+                    - inform client handshake end
+                    - hash everything for client check
+                5. then use normal HTTP, but encrypted with key
+                6. Man in the Middle
+                    - attacker intercept traffic, create TLS with client and server
+                    - attacker dont have trusted cert:
+                        - cert sent to client cant be verify
+                        - blocked
+                    - attacker use real server cert:
+                        - no use, attacker dont have private key to decrypt
+                    - attacker has trusted cert
+                        1. due to compromised CA: no way lol
+                        2. user install malicious root CA
+                            - new trusted root certificate installed
+                            - attacker can generate valid cert
+                        3. corporate proxy/ SSL inspection
+                            - company install company root cert in employee device
+                            - proxy intercept TLS, generate cert
+                    - Packet Sniffing Tools (抓包工具)
+                        - create own cert and trusted by browser
+                        - so can get content
+    - HTTP/2
+        - based on HTTPS, safe
+        - header compress: `HPACK`
+            - if multi request same header, remove it
+        - binary
+            - all data in binary, computer friendly, as no need convert
+            - save space: `200` is 3 byte, but 1 byte `10001000` enough
+        - Stream
+            - multiple stream in 1 TCP
+            - 1 stream multiple message(request)
+            - so data can send to different stream ( response not blocked by previous response)
+            - but if 1 stream
+        - server sending
+            - server can actively send to client by create stream
+            - server stream if even nunmber, client odd
+        - may still have head of line blocking
+            - response not blocked at HTTP layer
+            - but blocked at TCP layer ( block other stream as well)
+            - if earlier TCP packet not delivered, subsequent will be placed in buffer and wait
+    
+    - HTTP/3
+        - use UDP to solve HTTP/2 problem
+        - use QUIC to make it reliable
+        - QUIC:
+            - use stream, but block the stream itself only, not other
+            - faster connection
+                - old ver TCP in kernel, TLS in user space, need TCP 3 handshake, TLS handshake
+            - integrate TLS inside protocol
+            - connection shift
+                - ie from data to wifi
+                - TCP use ip+port from src+dest, when changed IP change, so connection broken
+                - QUIC use connection id, not the 4 from above, so connection same
+            - QUIC very new, old device may treat it as UDP and throw it
+
+2. optimize HTTP/1.1
+    - avoid HTTP
+        - use cached response
+    - reduce HTTP
+        - reduce redirection
+            - use a proxy for redirection
+        - combine request
+            - CSS Image Sprites: combine multiple image and only send 1 request
+            - webpack: packed js, css into 1 file
+        - delay request
+            - only send http request to get resource when need
+    - reduce data size  
+        - loseless compress
+            - compress and can be recoverd 100%
+            - gzip, deflare, br
+        - lossy compress
+            - approximate recover only
+            - for video, image etc
+9. why websocket when there is HTTP
+    - 
+    
