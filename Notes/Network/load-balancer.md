@@ -39,7 +39,7 @@
                 - SNI ( server name indication) no need TLS decrypt, can only see the SN ( domain)
         - TCP passthrough ( TLS passthrough )
             - client -> HTTPS, LB -> backend via raw TCP stream
-            - SSL not terminate
+            - SSL not terminate, TCP is end to end between client and backend
             - L4 LB, (only see IP, port)
 
 2. layer 4 (transport) load balancer (NLB)
@@ -79,9 +79,9 @@
 4. deployment pattern for load balancers
     - single load balancers: lb down, system down
     - HA load balancers:
-        - Active-passive: 1 active, another pasive, standby and to take over
+        - Active-passive: 1 active, another passive, standby and to take over
         - Active-active: 2 active, use DNS round robin
-        - Floating IP failover: ip to permanently tied to a machine
+        - Floating IP failover: ip not permanently tied to a machine
         - DNS-based failover
 
 5. LB vs API gateway

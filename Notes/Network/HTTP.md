@@ -190,18 +190,30 @@ https://xiaolincoding.com/network/2_http/http_interview.html
             - if earlier TCP packet not delivered, subsequent will be placed in buffer and wait
     
     - HTTP/3
-        - use UDP to solve HTTP/2 problem
+        - use `UDP` to solve HTTP/2 problem
         - use QUIC to make it reliable
-        - QUIC:
+        - `QUIC`:
             - use stream, but block the stream itself only, not other
+            - 1- RTT handshake
             - faster connection
-                - old ver TCP in kernel, TLS in user space, need TCP 3 handshake, TLS handshake
-            - integrate TLS inside protocol
+                - old ver TCP in kernel, TLS in user space, need 2RTT:
+                    - TCP 3 way handshake (1RTT)
+                    - TLS handshake (1RTT)
+            - integrate TLS inside transport protocol+ no TCP (it is UDP)
+                - client hello -> server hello, send data -> client finish
+                - 1 RTT
+                    - transport + crypto negotiated together
             - connection shift
                 - ie from data to wifi
                 - TCP use ip+port from src+dest, when changed IP change, so connection broken
                 - QUIC use connection id, not the 4 from above, so connection same
             - QUIC very new, old device may treat it as UDP and throw it
+                - if blocked, fallback HTTP/2 over TCP
+            - for Transport Layer level 4
+            - youtube/tiktok: app layer use MPEG-DASH/ HLS
+                - DASH = Dynamic Adaptive Streaming over HTTP (youtube)
+                - HLS = HTTP Live Streaming (tiktok)
+                - both segment video into small chunk, send part by part, can switch quality based on bandwidth
 
 2. optimize HTTP/1.1
     - avoid HTTP
@@ -221,6 +233,7 @@ https://xiaolincoding.com/network/2_http/http_interview.html
         - lossy compress
             - approximate recover only
             - for video, image etc
+            
 9. why websocket when there is HTTP
     - 
     
