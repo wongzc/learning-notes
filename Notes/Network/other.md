@@ -132,4 +132,22 @@
             - GeoDNS
             - Anycast ( BGP)
             - health check
-            
+
+12. after key in url
+    - You enter the URL in the browser address bar.
+    - The browser parses the URL (protocol, domain, path, port).
+    - The browser checks DNS cache for the domain’s IP address.
+    - If not cached, it queries a DNS resolver to get the IP address.
+    - DNS resolver returns the server’s IP address.
+    - The browser initiates a TCP connection to the server (3-way handshake).
+    - If HTTPS, a TLS handshake is performed to establish encryption.
+    - The browser sends an HTTP request (e.g., GET /).
+    - The request may pass through CDN, WAF, load balancer, or reverse proxy.
+    - The request reaches the backend application server.
+    - The server processes the request (logic, database queries, etc.).
+    - The server sends back an HTTP response (status code, headers, body).
+    - The browser receives and decrypts the response (if HTTPS).
+    - The browser parses the HTML and builds the DOM tree.
+    - It requests additional resources (CSS, JS, images).
+    - It executes JavaScript and builds the render tree.
+    - The browser renders pixels on the screen.

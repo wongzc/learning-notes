@@ -1,4 +1,8 @@
 1. nginx
+    - like apache web server
+        - also server as reverse proxy ( accept https,terminate ssl, forward request to django)
+        - django gunicorn dont have built in TLS management, protection etc
+        - gunicorn not production web server, not optimized for internet exposure
     - web server
         - serve static files ( HTML, CSS, image)
     - reverse proxy
