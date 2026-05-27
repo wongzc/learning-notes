@@ -35,8 +35,8 @@ https://xiaolincoding.com/redis/
         - AOF step: 
             1. execute write
             2. command added to server.aof_buf
-            3. write() to write aof_buf data to page cache
-            4. kernel to write to disk (fsync())
+            3. write() to write aof_buf data to page cache (页缓存)
+            4. kernel （内核）to write to disk (fsync())
         - redis.conf, appendfsync can control step 4
             1. Always: after write, always sync to AOF file
                 - less data lost, but block next fsync()!
@@ -51,15 +51,15 @@ https://xiaolincoding.com/redis/
         - execute when AOf file larger than preset threshold
         - only log the latest value of a key (older will be discard)
         - when rewrite, will write to new file first, then use the new file to overwrite original file
-            - why new file? to avoid damage by system failure when writing to orginal AOF
+            - why new file? to avoid damage by system failure when writing to original AOF
     - AOF background rewrite
         - rewrite is happen at background, not in the main process, as it is time consuming
-        - subprocess " bgrewriteaof "
-            - subprocess fork a page table from main process, which point to same memory address {page table: map virtual memory to physical address}
+        - subprocess （子进程） " bgrewriteaof "
+            - subprocess fork a page table （页表）from main process, which point to same memory address {page table: map virtual memory to physical address}
                 - save memory! but this memory become read only
                 - when main try to write to this memory, os will block and run copy on write ( main will use the new one)
                     - become 2 memory
-        - not using thread, as multi thread share same memory, need to use lock to avoid conflict, reduce efficiency
+        - not using thread （线程）, as multi thread share same memory, need to use lock to avoid conflict, reduce efficiency
         - 2 stage where may block main process
             1. when create sub process: need to copy page table from main process, larger table more time
             2. after create sub process: when main/sub modify share memory & trigger copy on write
@@ -69,7 +69,7 @@ https://xiaolincoding.com/redis/
                 - log to AOF buffer
                 - log to AOF rewrite buffer
             - so when bgrewriteaof done, it will signal main process
-            - main process will then add AOF rewrite buffer to new AOF file, so rewrited and orginal AOF became the same
+            - main process will then add AOF rewrite buffer to new AOF file, so rewritten and original AOF became the same
 
     
 3. RDB (Redis Database Backup)
@@ -77,8 +77,12 @@ https://xiaolincoding.com/redis/
     - faster than AOF when recover data
 
     - 2 command to create RDB:
-        - save: run in main process, may block if writing time too long, but dont need fork, impact redis perfrm
-        - bgsave: run in subprocess, avoid blocking main process, need fork, no redis pefrm impact 
+        - save: run in main process, 
+            - block if writing time too long, 
+            - dont need fork, no overhead from childprocess/ memory
+        - bgsave: 
+            - run in subprocess, avoid blocking main process, 
+            - need fork, overhead
         - default setting for save:  
             > save 900 1  
             > save 300 10  
@@ -99,6 +103,7 @@ https://xiaolincoding.com/redis/
 4. mix AOF and RDB
     - change this setting to yes  
         `aof-use-rdb-preamble yes`
+    - for rewrite part only, when AOF rewrite, it use RDB binary first, followed by AOF command
     - faster due to writing in RDB format, smaller size also, also RDB format load faster to redis
     - binary, so harder debug by human! also may harder to manual recover from broken AOF
     - when AOF rewrite:

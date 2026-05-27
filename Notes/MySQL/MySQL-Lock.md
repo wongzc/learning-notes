@@ -12,7 +12,7 @@ https://xiaolincoding.com/mysql
     - whole database become read only
     - block all others like `insert`, `delete`, `update`, `alter table`, `drop table`
     - to release: `unlock tables`
-    - ususally used for full datbase backup, to avoid backup inconsistent btw tables
+    - usually used for full datbase backup, to avoid backup inconsistent btw tables
         - like balance table adjusted, but sold table didnt update etc
     - problem:
         - block operation! 

@@ -1,0 +1,170 @@
+1. process
+    - process vs thread
+        - context switch:
+            - process switch heavier, need TLB flush, page table switch
+            - thread context switch lighter, as shared memory
+    - key commands
+        - `top`
+            - find cpu process
+            - RES: actual RAm usage
+            - VIRT: virtual memory
+            - `ps -fp <pid> `: inspect 
+            - `top -H -p <pid>`: check thread level
+        - `htop`: Real-time CPU, memory, load
+        - `ps aux --sort=-%cpu`: Snapshot of all processes, sorted by CPU usage (descending)
+        - `pidstat -u 1`: track CPU usage over time, not just snapshot
+        - `uptime`: Shows system runtime + load
+        - `strace`: trace system call and signal made by process
+    - context switching
+        - move from one running task to another ( process/ thread)
+        - register/ program counter/ stack / page table/ scheduling data all change
+        - disruption to TLB and cache and page table
+        - many switch = performance degrade
+        - to check
+            - high `cs` in `vmstat`
+    - load average
+        - how many task compete for CPU
+        - not equal to CPU usage
+            - high load, high CPU -> CPU bound
+            - high load, low CPU -> I/O wait
+            - low load, low CPU -> few heavy process
+    - scheduling
+        - EEVDF ( Earliest Eligible Virtual Deadline First )
+            - virtual runtime
+            - virtual deadline
+            - eligibility
+        - CFS (completely fair schedule)
+            - pure fairness, dont care interactive
+            - no deadline awareness
+        - still red black tree
+    - syscall
+        - each syscall cause context switch
+        - high CPU, low syscall: 
+            - user-space (code) problem
+            - spent time not enter kernel ( in user mode)
+        - high CPU, high syscall:
+            - heavy I/O, context switch
+            - I/O need kernel perform ( need syscall)
+        - low CPU, high syscall
+            - block reads, network latency
+            - process not doing much compute, but frequent enter kernel: wait heavy
+2. memory
+    - TLB
+        - translation look aside buffer: small fast cache for virtual memory address to physical memory
+        - without TLB
+            - cpu read VA, go to PML4->PDPT->PD->PT
+            - get PFN, combine with offset
+            - get physical address, access data
+        - with TLB
+            - cpu read VA, check TLB
+            - hit-> get PFN, combine with offset
+            - get physical address, access data
+    - virtual vs physical memory
+        - virtual memory
+            - address space seen by process
+            - can be larger than actual
+            - use page table + TLB to translate to physical
+        - physical memory
+            - actual RAm hardware, real address
+            - shared resource across all process
+    - RSS vs VSZ
+        - RSS: Resident Set Size, real memory usage, the portion of memory actual in RAM
+        - VSZ: virtual memory size, total virtual address space allocated
+    - page cache
+        - cache for disk backed data, not for anonymous (heap/stack)
+        - LRU like evict
+    - swapping
+        - move memory pages from RAM to disk to free RAM
+        - when memory pressure, evict inactive page
+        - only swap for:
+            - anonymous
+            - not file backed pages
+            - file backed: just drop, no swap
+                - if MAP_PRIVATE (COW), modified ( dirty) file backed is anonymous, can be swap
+        - high swaping means thrashing!
+            - `vmstat 1`: to check si,so
+    - OOM killer
+        - mechanism to terminate process when system out of memory
+    - commands
+        - `free -h`
+            - can show swap usage
+        - `vmstat 1`
+        - `ps aux --sort=-%mem`
+            - sort by high memory
+    - memory leak
+        - allocated memory no longer used but not released
+        - program lose reference to it, only release when program exits
+        - can use `top` to check growing RSS, sort by RES
+            - check process that RES increase over time
+        - or use `ps aux --sort=-%mem` to check
+            - `pmap <pid>`, show memory map
+
+3. Disk I/O
+    - command
+            - `df -h`: diskspace per filesystem
+            - `du -h`: directory usage
+    - IOPS vs throughput
+        - IOPS: number of I/O requests per second
+        - throughput: amount of data transferred per second
+        - high IOPS , small throughput: many small random rw
+        - low IOPS, high throughput: large sequential 
+    - blocking I/O
+        - thread/process issue an I/O, so execution suspended, CPU do other task until I/O done
+        - non-blocking I/O: busy polling , or part by parts of data to process
+    - disk queue
+        - pending I/O requests waiting to be serviced by the disk
+    - latency
+        - time it takes for a single operation to complete.
+        - high latency+low IOPS: disk bottle neck
+    - slow system
+        - `iostat -x 1`
+            - `%util` high, disk full
+            - `await` high, latency
+
+4. network stack
+    - commands
+        - `ss -tulnp`
+        - `netstat -an`
+        - `ping`
+        - `traceroute`
+
+5. file system
+    - mmap:
+        - MAP_SHARED: 
+            - changes visible to other
+            - changes written to underlying file
+        - MAP_PRIVATE
+            - changes not visible to other
+            - COW
+            - original never modify
+    - inode vs data block
+        - inode: store file metadata like size, permission, timestamp, pointer to data block
+            - inode count is fixed at filesystem creation time, usually 1 inode per 16KB
+            - space allocated when it created
+        - datablock: store real files, fixed 4kb size
+            - filename is in directory data block!!, not in inode
+    - disk full vs inode full
+        - ran out of space vs ran out of file slots
+    - page cache interaction
+        - kernel cache file data in RAM, in unit of page (4kB)
+            - when read file, check from page cache, if hit, return to user buffer
+                - if not, issue disk I/O, store data in page cache
+        - page cache for file-backed data only
+    - commands:
+        - `df -h`: disk usage
+        - `df -i`: inode usage
+
+6. performance tuning
+    - when slow
+        - `uptime`: check load
+        - `top`: check cpu
+        - `free -h` & `vmstat 1`: check memory
+        - `iostat -x 1`: check disk
+        - `ss -s`: check network
+
+7. scenario
+    - CPU spikes
+    - memory leaks
+    - disk bottle neck
+
+    

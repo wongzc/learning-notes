@@ -5,7 +5,7 @@ https://xiaolincoding.com/redis/
 0. database usually in disk, disk read write is slow, so use redis as cache between client and database
 
 ### 3 problem with cache
-1. cache avalanche
+1. cache avalanche (缓存雪崩)
     - data in redis usually with a TTL
     - when many data TTL ended at the same time, or Redis fail, client request direct to database, causing DB overloaded
     - many data TTL:
@@ -25,13 +25,13 @@ https://xiaolincoding.com/redis/
             1. stop client request to prevent overload database or limit the request
             2. build highly available redis cluster
 
-2. cache breakdown
+2. cache breakdown (缓存击穿)
     - for some of the frequent access data, if the data expired, all request will go to DB and causing problem
     - to solve:
         1. mutex lock
         2. dont set expiration for frequent access data, use background async refresh
 
-3. cache penetration
+3. cache penetration (缓存穿透)
     - data not in cache and DB
     - data cant be loaded into cache from db, so request keep coming in
     - why happen:

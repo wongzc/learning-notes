@@ -6,8 +6,8 @@ https://xiaolincoding.com/redis/
 1. redis underlying data structure
     1. simple dynamic strings (SDS)
             - SDS can save as binary data as it use len to decide if a string ended
-            - SDS get len complecity is O(1) ( C string is O(n) as it didnt keep len)
-            - SDS concate will not result in overflow, as it will check if space enough before execute
+            - SDS get len complexity is O(1) ( C string is O(n) as it didnt keep len)
+            - SDS concat will not result in overflow, as it will check if space enough before execute
             - c string use \0 as the end of string, ( pointer point to start of string)
                 - so c string cannot have \0, else will have problem
                 - c string cannot store binary data like image, video etc
@@ -133,8 +133,8 @@ https://xiaolincoding.com/redis/
                 - example: 4 level 0, 2 level 1, 1 level 2
                 - best performance
                 - how redis implement this?
-                    - randomgly create level when cerate node
-                    - generate random number between 0-1, untill it is bigger than 0.25
+                    - randomly create level when cerate node
+                    - generate random number between 0-1, until it is bigger than 0.25
                         - if <0.25, add 1 level
                     - max 64 level
         - why skip list but not tree?

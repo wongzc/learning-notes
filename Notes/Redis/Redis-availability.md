@@ -74,12 +74,13 @@ https://xiaolincoding.com/redis/
 
 7. how to know if a node is working?
     - use ping-pong
-    - if more than half node ping it and no pong, will determine as failed, and connection close
     - master every 10 secs send ping to slave to check
         - can be change by `repl-ping-slave-period`
+        - if slave no ACK more than preset timeout, considered as disconnect
     - slave every 1 sec send `replconf ack {offset}` to master
         - to check network connection
         - to make sure data consistency
+        - if slave not hearing from master more than timeout= assume master dead
 
 8. evicted key will be send as a `del` from master to slave
 
@@ -132,18 +133,19 @@ https://xiaolincoding.com/redis/
             - if node didnt reply within time ( `down-after-milliseconds` ), will be marked as **subjective offline**
                 - master node maybe delay response due to system load, so have subjective delay
                 - use sentinel cluster to check ( >=3 sentinel)
-            - once a node is subjective offline, sentinel send request to gather feedback from other sentinel by `is-master-down-by-addr`
+            - once a master is subjective offline, sentinel send request to gather feedback from other sentinel by `is-master-down-by-addr`
+                - for slave, no need quorum, just mark as unavailable, exclude from failover candidate
             - then based on `quorum`, if number of sentinel agree reach this number, node will be marked as down
         2. promote master
             1. choose leader from sentinel to execute master-slave switch
-                - the sentinel that mark master as subjecive offline is the candidate
-                - all sentinel vote to choose leader from candidate ( can be multiple candidate)
-                - all sentinel only 1 vote
+                - Once master is ODOWN, any Sentinel may become candidate
+                    - candidate asks others for vote for current epoch, each sentinel 1 vote per epoch
+                    - sentinel vote first valid request received
                 - candidate that get move than 50% and >quorum become leader
                     - as quorum used to decide objective offline and choose leader, and choose leader need >50%
                     - if quorum <50%, eventhough mark as objective offline, cant swap.
                     - so suggestion is quorum = n//2+1 (n is number of sentinel)
-            2. choose new master
+            2. leader choose new master
                 - filter out offline node
                 - filter out node with bad network connection
                 - filter out node that had bad network connection. ( based on number of down happened)
